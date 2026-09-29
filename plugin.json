@@ -1,0 +1,28 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "coinbase",
+  "version": "0.0.1",
+  "description": "Shared Coinbase workflows with remote MCP and optional local CLI execution. Market data, portfolios, trading, conversions, and x402; financial actions require explicit authorization.",
+  "author": { "name": "Coinbase" },
+  "homepage": "https://docs.cdp.coinbase.com/ai-agents/coinbase-for-agents/coinbase-mcp",
+  "repository": "https://github.com/coinbase/agents",
+  "license": "MIT",
+  "keywords": ["coinbase", "mcp", "cli", "trading", "portfolios", "x402"],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Coinbase",
+        "shortDescription": "Coinbase workflows for MCP and CLI",
+        "longDescription": "Shared workflows for portfolios, market data, authorized trading, conversions, and budgeted x402 research. Use approved remote MCP with OAuth or an explicitly selected, separately configured local CLI.",
+        "developerName": "Coinbase",
+        "category": "Productivity",
+        "capabilities": ["Read", "Write"],
+        "logo": "./assets/coinbase.svg",
+        "composerIcon": "./assets/coinbase.svg",
+        "brandColor": "#0052FF",
+        "websiteURL": "https://docs.cdp.coinbase.com/ai-agents/coinbase-for-agents/coinbase-mcp",
+        "defaultPrompt": ["Connect Coinbase and list my portfolios. Do not trade or spend funds."]
+      }
+    }
+  }
+}

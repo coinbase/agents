@@ -1,0 +1,14 @@
+.env
+.env.*
+*.pem
+*.key
+*api_key*.json
+credentials.json
+tokens.json
+.DS_Store
+*.log
+.claude/
+.codex/
+.cursor/
+.hermes/
+.pi/

@@ -1,0 +1,16 @@
+{
+  "name": "coinbase",
+  "version": "0.0.1",
+  "description": "Shared Coinbase workflows with remote MCP and optional local CLI execution. Market data, portfolios, trading, conversions, and x402; financial actions require explicit authorization.",
+  "author": { "name": "Coinbase" },
+  "homepage": "https://docs.cdp.coinbase.com/ai-agents/coinbase-for-agents/coinbase-mcp",
+  "repository": "https://github.com/coinbase/agents",
+  "license": "MIT",
+  "skills": "./skills/",
+  "mcpServers": {
+    "coinbase": {
+      "type": "http",
+      "url": "https://agents.coinbase.com/mcp"
+    }
+  }
+}

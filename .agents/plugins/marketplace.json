@@ -1,0 +1,12 @@
+{
+  "name": "coinbase-agents",
+  "interface": { "displayName": "Coinbase Agents" },
+  "plugins": [
+    {
+      "name": "coinbase",
+      "source": { "source": "local", "path": "./" },
+      "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+      "category": "Productivity"
+    }
+  ]
+}

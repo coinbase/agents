@@ -1,0 +1,14 @@
+{
+  "name": "coinbase-agents",
+  "owner": { "name": "Coinbase" },
+  "metadata": { "description": "Coinbase skills and harness integrations" },
+  "plugins": [
+    {
+      "name": "coinbase",
+      "source": "./",
+      "description": "Shared Coinbase MCP and CLI workflows for Claude Code",
+      "version": "0.0.1",
+      "license": "MIT"
+    }
+  ]
+}
