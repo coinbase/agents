@@ -54,7 +54,18 @@ def get_single_plugin(marketplace: dict, label: str) -> dict:
     return plugins[0]
 
 
+def copy_file(source: Path, target: Path) -> None:
+    if source.is_symlink() or not source.is_file():
+        raise ValueError(f"distribution source must be a regular file: {source}")
+    resolved = source.resolve()
+    if ROOT not in (resolved, *resolved.parents):
+        raise ValueError(f"distribution source escapes the repository: {source}")
+    shutil.copy2(source, target)
+
+
 def copy_tree(source: Path, target: Path) -> None:
+    if source.is_symlink() or not source.is_dir():
+        raise ValueError(f"distribution source must be a directory: {source}")
     for path in source.rglob("*"):
         if path.is_symlink():
             raise ValueError(f"symlink is not allowed in a distribution: {path}")
@@ -62,26 +73,26 @@ def copy_tree(source: Path, target: Path) -> None:
 
 
 def copy_common(target: Path) -> None:
-    shutil.copy2(ROOT / "LICENSE", target / "LICENSE")
-    shutil.copy2(ROOT / "src/plugins/README.md", target / "README.md")
+    copy_file(ROOT / "LICENSE", target / "LICENSE")
+    copy_file(ROOT / "src/plugins/README.md", target / "README.md")
 
 
 def build_portable(target: Path) -> None:
     target.mkdir(parents=True)
-    shutil.copy2(ROOT / "src/plugins/portable/plugin.json", target / "plugin.json")
-    shutil.copy2(ROOT / "src/plugins/portable/mcp.json", target / "mcp.json")
+    copy_file(ROOT / "src/plugins/portable/plugin.json", target / "plugin.json")
+    copy_file(ROOT / "src/plugins/portable/mcp.json", target / "mcp.json")
     copy_tree(ROOT / "skills", target / "skills")
     asset_dir = target / "com.openai/assets"
     asset_dir.mkdir(parents=True)
-    shutil.copy2(ROOT / "assets/coinbase.svg", asset_dir / "coinbase.svg")
+    copy_file(ROOT / "assets/coinbase.svg", asset_dir / "coinbase.svg")
     copy_common(target)
 
 
 def build_claude(target: Path) -> None:
     manifest_dir = target / ".claude-plugin"
     manifest_dir.mkdir(parents=True)
-    shutil.copy2(ROOT / "src/plugins/claude/plugin.json", manifest_dir / "plugin.json")
-    shutil.copy2(
+    copy_file(ROOT / "src/plugins/claude/plugin.json", manifest_dir / "plugin.json")
+    copy_file(
         ROOT / "src/plugins/claude/marketplace.json",
         manifest_dir / "marketplace.json",
     )
@@ -92,7 +103,7 @@ def build_claude(target: Path) -> None:
 def build_codex(target: Path, portable: Path) -> None:
     catalog_dir = target / ".agents/plugins"
     catalog_dir.mkdir(parents=True)
-    shutil.copy2(
+    copy_file(
         ROOT / "src/plugins/codex/marketplace.json",
         catalog_dir / "marketplace.json",
     )
@@ -174,7 +185,14 @@ def validate_portable(root: Path, version: str) -> None:
     interface = manifest["extensions"]["com.openai"]["interface"]
     for field in ("logo", "composerIcon"):
         asset = interface[field]
-        if not asset.startswith("./") or not (root / asset[2:]).is_file():
+        asset_path = root / asset[2:] if isinstance(asset, str) else root
+        resolved = asset_path.resolve()
+        if (
+            not isinstance(asset, str)
+            or not asset.startswith("./")
+            or root.resolve() not in (resolved, *resolved.parents)
+            or not asset_path.is_file()
+        ):
             raise ValueError(f"invalid OpenAI {field} path")
     validate_skills(root)
     validate_links(root)
@@ -292,6 +310,9 @@ def main() -> None:
     output = args.output.resolve()
     if output == ROOT or output in ROOT.parents:
         raise ValueError("output cannot contain the repository")
+    for source in (ROOT / "assets", ROOT / "skills", ROOT / "src"):
+        if output == source or source in output.parents:
+            raise ValueError("output cannot be inside a distribution source directory")
     if output.exists():
         marker = output / OUTPUT_MARKER
         if not output.is_dir() or (any(output.iterdir()) and not marker.is_file()):
