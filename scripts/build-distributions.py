@@ -15,6 +15,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_MCP_URL = "https://agents.coinbase.com/mcp"
+OUTPUT_MARKER = ".coinbase-agents-distributions"
 PRERELEASE_IDENTIFIER = r"(?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)"
 SEMVER = re.compile(
     r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)"
@@ -40,6 +41,17 @@ def load_json(path: Path) -> dict:
     if not isinstance(value, dict):
         raise ValueError(f"{path} must contain a JSON object")
     return value
+
+
+def get_single_plugin(marketplace: dict, label: str) -> dict:
+    plugins = marketplace.get("plugins")
+    if (
+        not isinstance(plugins, list)
+        or len(plugins) != 1
+        or not isinstance(plugins[0], dict)
+    ):
+        raise ValueError(f"{label} marketplace must contain exactly one plugin")
+    return plugins[0]
 
 
 def copy_tree(source: Path, target: Path) -> None:
@@ -178,8 +190,13 @@ def validate_claude(root: Path, version: str) -> None:
         raise ValueError("invalid Claude skills path")
     if server != {"type": "http", "url": EXPECTED_MCP_URL}:
         raise ValueError("invalid Claude MCP server")
-    plugin = marketplace.get("plugins", [{}])[0]
-    if plugin.get("source") != "./" or plugin.get("version") != version:
+    plugin = get_single_plugin(marketplace, "Claude")
+    if (
+        marketplace.get("name") != "coinbase-agents"
+        or plugin.get("name") != "coinbase"
+        or plugin.get("source") != "./"
+        or plugin.get("version") != version
+    ):
         raise ValueError("invalid Claude marketplace entry")
     validate_skills(root)
     validate_links(root)
@@ -187,7 +204,7 @@ def validate_claude(root: Path, version: str) -> None:
 
 def validate_codex(root: Path, version: str) -> None:
     marketplace = load_json(root / ".agents/plugins/marketplace.json")
-    plugin = marketplace.get("plugins", [{}])[0]
+    plugin = get_single_plugin(marketplace, "Codex")
     expected = {"source": "local", "path": "./plugins/coinbase"}
     if plugin.get("name") != "coinbase" or plugin.get("source") != expected:
         raise ValueError("invalid Codex marketplace entry")
@@ -266,17 +283,22 @@ def main() -> None:
 
     claude = load_json(ROOT / "src/plugins/claude/plugin.json")
     marketplace = load_json(ROOT / "src/plugins/claude/marketplace.json")
-    if (
-        claude.get("version") != version
-        or marketplace.get("plugins", [{}])[0].get("version") != version
-    ):
+    marketplace_plugin = get_single_plugin(marketplace, "Claude")
+    if claude.get("version") != version or marketplace_plugin.get("version") != version:
         raise ValueError("distribution versions do not match")
 
+    if args.output.is_symlink():
+        raise ValueError("output cannot be a symlink")
     output = args.output.resolve()
     if output == ROOT or output in ROOT.parents:
         raise ValueError("output cannot contain the repository")
     if output.exists():
+        marker = output / OUTPUT_MARKER
+        if not output.is_dir() or (any(output.iterdir()) and not marker.is_file()):
+            raise ValueError("refusing to replace an unrecognized output directory")
         shutil.rmtree(output)
+    output.mkdir(parents=True)
+    (output / OUTPUT_MARKER).touch()
     packages = output / "site/packages"
     downloads = output / "site/downloads"
     packages.mkdir(parents=True)
