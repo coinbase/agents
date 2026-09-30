@@ -1,19 +1,24 @@
 #!/usr/bin/env python3
 
 import argparse
+import gzip
 import hashlib
 import html
 import json
 import re
 import shutil
+import stat
+import tarfile
+import zipfile
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_MCP_URL = "https://agents.coinbase.com/mcp"
+PRERELEASE_IDENTIFIER = r"(?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)"
 SEMVER = re.compile(
     r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)"
-    r"(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
+    rf"(?:-{PRERELEASE_IDENTIFIER}(?:\.{PRERELEASE_IDENTIFIER})*)?"
     r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$"
 )
 PORTABLE_FIELDS = {
@@ -191,22 +196,47 @@ def validate_codex(root: Path, version: str) -> None:
 
 def archive(package_dir: Path, downloads: Path) -> list[Path]:
     base = downloads / package_dir.name
-    zip_path = Path(
-        shutil.make_archive(
-            str(base),
-            "zip",
-            root_dir=package_dir.parent,
-            base_dir=package_dir.name,
-        )
-    )
-    tar_path = Path(
-        shutil.make_archive(
-            str(base),
-            "gztar",
-            root_dir=package_dir.parent,
-            base_dir=package_dir.name,
-        )
-    )
+    paths = [package_dir, *sorted(package_dir.rglob("*"))]
+    zip_path = Path(f"{base}.zip")
+    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as archive_file:
+        for path in paths:
+            name = path.relative_to(package_dir.parent).as_posix()
+            info = zipfile.ZipInfo(
+                f"{name}/" if path.is_dir() else name,
+                date_time=(1980, 1, 1, 0, 0, 0),
+            )
+            info.create_system = 3
+            info.external_attr = (
+                (stat.S_IFDIR | 0o755) if path.is_dir() else (stat.S_IFREG | 0o644)
+            ) << 16
+            archive_file.writestr(
+                info,
+                b"" if path.is_dir() else path.read_bytes(),
+                compress_type=zipfile.ZIP_DEFLATED,
+            )
+
+    tar_path = Path(f"{base}.tar.gz")
+    with tar_path.open("wb") as raw_file:
+        with gzip.GzipFile(
+            filename="", mode="wb", fileobj=raw_file, mtime=0
+        ) as gzip_file:
+            with tarfile.open(fileobj=gzip_file, mode="w") as archive_file:
+                for path in paths:
+                    info = tarfile.TarInfo(
+                        path.relative_to(package_dir.parent).as_posix()
+                    )
+                    info.mtime = 0
+                    info.uid = info.gid = 0
+                    info.uname = info.gname = ""
+                    if path.is_dir():
+                        info.type = tarfile.DIRTYPE
+                        info.mode = 0o755
+                        archive_file.addfile(info)
+                    else:
+                        info.mode = 0o644
+                        info.size = path.stat().st_size
+                        with path.open("rb") as source:
+                            archive_file.addfile(info, source)
     return [zip_path, tar_path]
 
 
