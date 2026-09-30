@@ -14,10 +14,10 @@ What changed and why?
 
 Describe native harness checks performed and explicitly list checks not run. Include screenshots or before/after behavior where useful; omit credentials and account data.
 
-- [ ] Portable root manifest and MCP config validate against the published Agent Plugins schemas
-- [ ] Package paths and skill references remain inside the repository/plugin root
+- [ ] Generated portable manifest and MCP config validate against the vendored Agent Plugins schemas
+- [ ] Package paths and skill references remain inside each generated plugin root
 - [ ] Marketplace, skills, MCP, and icon paths are valid
-- [ ] Exactly one canonical skill library; no per-harness copies
+- [ ] Exactly one canonical skill library; generated copies are not committed
 - [ ] Claude compatibility metadata/endpoint and marketplace sources agree with the portable package
 - [ ] Tool schemas, authorization, and retry behavior reviewed
 - [ ] README and changelog updated; versions consistent

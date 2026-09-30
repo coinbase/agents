@@ -17,8 +17,8 @@
         "developerName": "Coinbase",
         "category": "Productivity",
         "capabilities": ["Read", "Write"],
-        "logo": "./assets/coinbase.svg",
-        "composerIcon": "./assets/coinbase.svg",
+        "logo": "./com.openai/assets/coinbase.svg",
+        "composerIcon": "./com.openai/assets/coinbase.svg",
         "brandColor": "#0052FF",
         "websiteURL": "https://docs.cdp.coinbase.com/ai-agents/coinbase-for-agents/coinbase-mcp",
         "defaultPrompt": ["Connect Coinbase and list my portfolios. Do not trade or spend funds."]

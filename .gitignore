@@ -12,3 +12,5 @@ tokens.json
 .cursor/
 .hermes/
 .pi/
+__pycache__/
+dist/
