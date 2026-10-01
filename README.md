@@ -28,13 +28,23 @@ For agents with shell access, the optional [`@coinbase/coinbase-cli`](https://ww
 | [x402](skills/coinbase-x402/SKILL.md) | Discover and purchase research within an approved budget |
 | [Watch](skills/coinbase-watch/SKILL.md) | Bounded streaming and monitoring; CLI only |
 
-### Install locally
+## Plugin distributions
 
-The repository root is one [Agent Plugins v1.0.0](https://agent-plugins.org/) package, with a Claude Code compatibility manifest. Use the whole package, including tracked dot-directories, but exclude `.git` and local credentials. Plugin-format support does not imply Coinbase OAuth client approval; do not bypass rejected authentication.
+This repository is the canonical source for three generated distributions:
+
+- `coinbase-agent-plugin-vX.Y.Z`: portable [Agent Plugins v1.0.0](https://agent-plugins.org/) package for Cursor, Hermes, and other compatible clients.
+- `coinbase-claude-vX.Y.Z`: Claude Code native package.
+- `coinbase-codex-vX.Y.Z`: Codex marketplace containing the portable package.
+
+Download versioned ZIP or tar archives from [Coinbase Agent Plugin downloads](https://coinbase.github.io/agents/), verify them against `SHA256SUMS`, and extract the package for your client. Plugin-format support does not imply Coinbase OAuth client approval; do not bypass rejected authentication.
+
+For local development, run `python3 scripts/build-distributions.py dist` and use the generated directories under `dist/site/packages/`. The repository root is not an installable plugin.
+
+### Install locally
 
 #### Claude Code
 
-From the repository root:
+From the extracted `coinbase-claude-vX.Y.Z` directory:
 
 ```sh
 claude --plugin-dir "$PWD"
@@ -44,7 +54,7 @@ Open `/mcp` to authenticate, then load `/coinbase:coinbase`. See [Claude Code's 
 
 #### Codex
 
-From the repository root:
+From the extracted `coinbase-codex-vX.Y.Z` directory:
 
 ```sh
 codex plugin marketplace add "$PWD"
@@ -54,11 +64,11 @@ Install and enable `coinbase` from `coinbase-agents` in the supported plugin UI.
 
 #### Cursor
 
-Copy the package into a new `~/.cursor/plugins/local/coinbase/` directory, then reload **Customize**. Local imports require administrator permission. See [Cursor's plugin documentation](https://cursor.com/docs/reference/plugins).
+Extract `coinbase-agent-plugin-vX.Y.Z` into a new `~/.cursor/plugins/local/coinbase/` directory, with `plugin.json` directly inside it, then reload **Customize**. Local imports require administrator permission. See [Cursor's plugin documentation](https://cursor.com/docs/reference/plugins).
 
 #### Hermes
 
-Copy the package into a new `~/.hermes/plugins/coinbase/` directory, or your active profile's plugin directory, then run:
+Extract `coinbase-agent-plugin-vX.Y.Z` into a new `~/.hermes/plugins/coinbase/` directory, or your active profile's plugin directory, then run:
 
 ```sh
 hermes plugins list
