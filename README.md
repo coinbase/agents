@@ -66,6 +66,21 @@ Install and enable `coinbase` from `coinbase-agents` in the supported plugin UI.
 
 Extract `coinbase-agent-plugin-vX.Y.Z` into a new `~/.cursor/plugins/local/coinbase/` directory, with `plugin.json` directly inside it, then reload **Customize**. Local imports require administrator permission. See [Cursor's plugin documentation](https://cursor.com/docs/reference/plugins).
 
+If a local plugin does not complete OAuth scope registration, add the server directly to `~/.cursor/mcp.json`, preserving other entries:
+
+```json
+{
+  "mcpServers": {
+    "coinbase": {
+      "type": "http",
+      "url": "https://agents.coinbase.com/mcp"
+    }
+  }
+}
+```
+
+Restart Cursor, then connect and approve the native OAuth prompt.
+
 #### Hermes
 
 Extract `coinbase-agent-plugin-vX.Y.Z` into a new `~/.hermes/plugins/coinbase/` directory, or your active profile's plugin directory, then run:
