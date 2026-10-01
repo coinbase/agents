@@ -91,4 +91,14 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidance, source provena
 
 ## License
 
-[MIT](LICENSE). Coinbase trademarks are not covered by the software license.
+This project is licensed under the [MIT](LICENSE). This license does not grant any rights to use Coinbase names, logos, or trademarks.
+
+## Legal Notice
+
+This repository provides skills and plugin packaging that let AI agents interact with your Coinbase account on your behalf based on instructions you give and permissions you approve. Instructions your agent sends through these tools are treated as instructions from you.
+
+The software is provided "as is" and "as available," without warranties of any kind, express or implied, including merchantability, fitness for a particular purpose, and non-infringement. It is intended only to help carry out your instructions and is not intended to provide (i) an offer or solicitation to buy or sell any asset or to participate in any investment or trading strategy, or (ii) investment recommendations or investment, legal, tax, or accounting advice.
+
+AI agents can produce inaccurate or unexpected output and can be influenced by text they read, including third-party content. You are responsible for reviewing your agent's actions, keeping approval controls enabled, and securing the environment it runs in. Trading digital assets, equities, and futures involves substantial risk of loss, and you assume all risk of loss from your use of the software.
+
+Your use of this software is subject to the [Coinbase Developer Platform Terms of Service](https://www.coinbase.com/legal/developer-platform/terms-of-service) and your use of Coinbase Services is subject to the applicable agreements that govern access to your Coinbase account. Availability varies by location and account eligibility.
