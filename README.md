@@ -1,6 +1,6 @@
 # Coinbase Agents
 
-Skills and plugins for using Coinbase with AI agents. Read market data, manage portfolios, trade, and access paid research through Coinbase MCP or the Coinbase CLI.
+Skills and plugins for using Coinbase with AI agents. Read market data, manage portfolios, trade, and access paid research through Coinbase MCP or the Coinbase CLI, or practice with a local paper-trading simulator.
 
 ## Model Context Protocol (MCP)
 
@@ -27,6 +27,28 @@ For agents with shell access, the optional [`@coinbase/coinbase-cli`](https://ww
 | [Futures](skills/coinbase-futures/SKILL.md) | Eligible CFM dated futures, contract sizing, and risk checks |
 | [x402](skills/coinbase-x402/SKILL.md) | Discover and purchase research within an approved budget |
 | [Watch](skills/coinbase-watch/SKILL.md) | Bounded streaming and monitoring; CLI only |
+| [Paper trading](skills/coinbase-paper-trading/SKILL.md) | Local `coinbase-paper` command for simulated spot market orders with virtual cash; requires Python 3.11+, no credentials, and never places real orders |
+
+## Local paper-trading pilot
+
+Start with the [host-neutral paper-trading guide](skills/coinbase-paper-trading/START-HERE.md). The bundled `coinbase-paper` command fetches public Coinbase market data over HTTPS and simulates spot market orders with virtual cash in a local SQLite account. It needs an agent-accessible terminal, Python 3.11+ with SQLite, durable local storage, and public HTTPS access—no login, API key, live credentials, MCP connection, or other dependencies. Chat-only clients and ephemeral code sandboxes without durable storage cannot run this workflow. Unknown persistence blocks setup; a successful file write does not certify host retention.
+
+Build a self-contained paper-only bundle from this checkout:
+
+```sh
+python3 scripts/build-distributions.py dist-paper --paper-only
+```
+
+The versioned ZIP/tar and checksums are under `dist-paper/site/downloads/`. The bundle contains one skill, its guide/references, the `bin/coinbase-paper` launcher and its `scripts/` runtime, and the license—not the live-trading skills or any account state. Extract with a tool that keeps file permissions, then run the launcher by absolute path from any directory:
+
+```sh
+"/abs/path/coinbase-paper-trading-vX.Y.Z/bin/coinbase-paper" --help
+"/abs/path/coinbase-paper-trading-vX.Y.Z/bin/coinbase-paper" doctor
+```
+
+If the executable bit is lost, run it as `python3 /abs/path/.../bin/coinbase-paper`. Nothing is added to `PATH`. Account data is kept outside the code in one directory per OS user: `--data-dir ABS`, else `COINBASE_PAPER_HOME`, else `$XDG_DATA_HOME/coinbase-paper`, else `~/.local/share/coinbase-paper`. Record the launcher path and data directory durably so upgrades and fresh conversations resume the same verified account. Retry an uncertain order with the exact same `--request-id`. The low-level offline engine with MCP market-data handoff remains an [optional legacy route](skills/coinbase-paper-trading/references/mcp.md).
+
+The bundle does not install itself into a host, configure authentication, or change the MCP server. Installing files is not registration: making the skill discoverable by fresh bots is a separate host requirement. Use the [host QA checklist](skills/coinbase-paper-trading/references/qa.md) before claiming native discovery or persistence for a client.
 
 ## Plugin distributions
 
@@ -79,7 +101,7 @@ hermes plugins enable coinbase
 
 Use the plugin key returned by `list` if different. Follow [Hermes's portable-plugin documentation](https://hermes-agent.nousresearch.com/docs/developer-guide/plugins/#portable-agent-plugins-v1-packages) and native OAuth setup. Reuse existing connections rather than adding duplicates.
 
-For standalone skills, use your harness's supported installation method and include the complete `skills/` directory so cross-skill references resolve. Preserve existing installations and settings.
+For the full library's standalone skills, use your harness's supported installation method and include the complete `skills/` directory so cross-skill references resolve. The paper-only bundle above is self-contained and needs no live-skill installation. Preserve existing installations and settings.
 
 ## Safety and support
 

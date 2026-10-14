@@ -26,10 +26,10 @@ jobs:
             --schemafile schemas/1.0.0/mcp.schema.json \
             src/plugins/portable/mcp.json
 
-      - name: Check distribution builder
+      - name: Check Python
         run: |
-          uvx ruff@0.13.2 check scripts/build-distributions.py
-          uvx ruff@0.13.2 format --check scripts/build-distributions.py
+          uvx ruff@0.13.2 check scripts/build-distributions.py skills/coinbase-paper-trading/scripts skills/coinbase-paper-trading/bin/coinbase-paper tests
+          uvx ruff@0.13.2 format --check scripts/build-distributions.py skills/coinbase-paper-trading/scripts skills/coinbase-paper-trading/bin/coinbase-paper tests
 
       - name: Build plugin distributions
         run: python3 scripts/build-distributions.py dist
@@ -37,3 +37,29 @@ jobs:
       - name: Verify checksums
         working-directory: dist/site/downloads
         run: sha256sum --check SHA256SUMS
+
+      - name: Build and verify paper-only bundle
+        run: |
+          python3 scripts/build-distributions.py dist-paper --paper-only
+          (cd dist-paper/site/downloads && sha256sum --check SHA256SUMS)
+          (cd dist-paper/site/packages/coinbase-paper-trading-* && sha256sum --check SHA256SUMS)
+          test -x dist-paper/site/packages/coinbase-paper-trading-*/bin/coinbase-paper
+
+  test:
+    name: Paper tests (Python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+
+      - name: Run tests
+        run: |
+          uv run --no-project --python ${{ matrix.python }} -- \
+            python -W error::ResourceWarning -m unittest discover -s tests -v

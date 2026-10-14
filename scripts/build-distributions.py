@@ -16,6 +16,25 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_MCP_URL = "https://agents.coinbase.com/mcp"
 OUTPUT_MARKER = ".coinbase-agents-distributions"
+SKILL_COUNT = 10
+PAPER_SKILL = "coinbase-paper-trading"
+PAPER_FILES = (
+    "SKILL.md",
+    "START-HERE.md",
+    "references/cli.md",
+    "references/mcp.md",
+    "references/host-setup.md",
+    "references/connector-instructions.md",
+    "references/qa.md",
+    "scripts/paper.py",
+    "scripts/paper_cli.py",
+    "scripts/public_data.py",
+    "bin/coinbase-paper",
+)
+REQUIRED_SKILL_FILES = {PAPER_SKILL: PAPER_FILES}
+EXECUTABLE_SKILL_FILES = {PAPER_SKILL: ("bin/coinbase-paper",)}
+EXCLUDED_PATTERNS = ("__pycache__", "*.pyc", "*.pyo", ".DS_Store")
+FORBIDDEN_SUFFIXES = (".pyc", ".pyo", ".db", ".sqlite", ".sqlite3", "-journal", "-wal")
 PRERELEASE_IDENTIFIER = r"(?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)"
 SEMVER = re.compile(
     r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)"
@@ -69,7 +88,7 @@ def copy_tree(source: Path, target: Path) -> None:
     for path in source.rglob("*"):
         if path.is_symlink():
             raise ValueError(f"symlink is not allowed in a distribution: {path}")
-    shutil.copytree(source, target)
+    shutil.copytree(source, target, ignore=shutil.ignore_patterns(*EXCLUDED_PATTERNS))
 
 
 def copy_common(target: Path) -> None:
@@ -111,12 +130,17 @@ def build_codex(target: Path, portable: Path) -> None:
     copy_common(target)
 
 
-def validate_skills(root: Path) -> None:
-    skills = root / "skills"
-    entries = sorted(skills.iterdir())
-    if len(entries) != 9:
-        raise ValueError(f"expected 9 skills, found {len(entries)}")
+def validate_skills(root: Path, standalone: bool = False) -> None:
+    skills = root if standalone else root / "skills"
+    entries = [root] if standalone else sorted(skills.iterdir())
+    expected = 1 if standalone else SKILL_COUNT
+    if len(entries) != expected:
+        raise ValueError(f"expected {expected} skills, found {len(entries)}")
+    for path in skills.rglob("*"):
+        if path.name == "__pycache__" or path.name.endswith(FORBIDDEN_SUFFIXES):
+            raise ValueError(f"cache or state file in distribution: {path}")
     for skill in entries:
+        skill_name = PAPER_SKILL if standalone else skill.name
         skill_file = skill / "SKILL.md"
         if not skill.is_dir() or not skill_file.is_file():
             raise ValueError(f"invalid skill entry: {skill}")
@@ -124,6 +148,25 @@ def validate_skills(root: Path) -> None:
             if not (skill / "references" / reference).is_file():
                 raise ValueError(
                     f"missing reference: {skill / 'references' / reference}"
+                )
+        for required in REQUIRED_SKILL_FILES.get(skill_name, ()):
+            if not (skill / required).is_file():
+                raise ValueError(f"missing skill file: {skill / required}")
+        if skill_name == PAPER_SKILL:
+            # Allowlist: no account state, saved requests, profiles, or extras.
+            found = {
+                path.relative_to(skill).as_posix()
+                for path in skill.rglob("*")
+                if not path.is_dir()
+            }
+            if standalone:
+                found -= {"LICENSE"}
+            if found != set(PAPER_FILES):
+                raise ValueError(f"unexpected paper skill contents: {skill}")
+        for executable in EXECUTABLE_SKILL_FILES.get(skill_name, ()):
+            if not (skill / executable).stat().st_mode & 0o100:
+                raise ValueError(
+                    f"skill launcher is not executable: {skill / executable}"
                 )
         text = skill_file.read_text()
         match = re.match(r"^---\n(.*?)\n---\n", text, re.DOTALL)
@@ -134,7 +177,7 @@ def validate_skills(root: Path) -> None:
         )
         name = fields.get("name", "").strip()
         description = fields.get("description", "").strip()
-        if name != skill.name or not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", name):
+        if name != skill_name or not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", name):
             raise ValueError(f"invalid skill name: {skill_file}")
         if not 1 <= len(description) <= 1024:
             raise ValueError(f"invalid skill description: {skill_file}")
@@ -151,6 +194,31 @@ def validate_links(root: Path) -> None:
                 raise ValueError(f"link escapes distribution: {document} -> {target}")
             if not resolved.exists():
                 raise ValueError(f"broken link: {document} -> {target}")
+
+
+def paper_version() -> str:
+    text = (ROOT / "skills" / PAPER_SKILL / "SKILL.md").read_text()
+    match = re.search(r"^  version: (\S+)$", text, re.MULTILINE)
+    if not match or not SEMVER.fullmatch(match.group(1)):
+        raise ValueError("invalid paper skill version")
+    return match.group(1)
+
+
+def build_paper_bundle(target: Path) -> None:
+    target.mkdir(parents=True)
+    for relative in PAPER_FILES:
+        destination = target / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        copy_file(ROOT / "skills" / PAPER_SKILL / relative, destination)
+    copy_file(ROOT / "LICENSE", target / "LICENSE")
+    validate_skills(target, standalone=True)
+    validate_links(target)
+    checksums = [
+        f"{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.relative_to(target).as_posix()}"
+        for path in sorted(target.rglob("*"))
+        if path.is_file()
+    ]
+    (target / "SHA256SUMS").write_text("\n".join(checksums) + "\n")
 
 
 def validate_portable(root: Path, version: str) -> None:
@@ -229,6 +297,10 @@ def validate_codex(root: Path, version: str) -> None:
     validate_portable(root / "plugins/coinbase", version)
 
 
+def mode(path: Path) -> int:
+    return 0o755 if path.stat().st_mode & 0o111 else 0o644
+
+
 def archive(package_dir: Path, downloads: Path) -> list[Path]:
     base = downloads / package_dir.name
     paths = [package_dir, *sorted(package_dir.rglob("*"))]
@@ -242,7 +314,7 @@ def archive(package_dir: Path, downloads: Path) -> list[Path]:
             )
             info.create_system = 3
             info.external_attr = (
-                (stat.S_IFDIR | 0o755) if path.is_dir() else (stat.S_IFREG | 0o644)
+                (stat.S_IFDIR | 0o755) if path.is_dir() else (stat.S_IFREG | mode(path))
             ) << 16
             archive_file.writestr(
                 info,
@@ -268,7 +340,7 @@ def archive(package_dir: Path, downloads: Path) -> list[Path]:
                         info.mode = 0o755
                         archive_file.addfile(info)
                     else:
-                        info.mode = 0o644
+                        info.mode = mode(path)
                         info.size = path.stat().st_size
                         with path.open("rb") as source:
                             archive_file.addfile(info, source)
@@ -292,18 +364,28 @@ def write_index(site: Path, version: str, archives: list[Path]) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("output", type=Path)
+    parser.add_argument(
+        "--paper-only",
+        action="store_true",
+        help="build only the host-neutral paper-trading skill bundle, without live skills",
+    )
     args = parser.parse_args()
 
-    manifest = load_json(ROOT / "src/plugins/portable/plugin.json")
-    version = manifest.get("version", "")
-    if not SEMVER.fullmatch(version):
-        raise ValueError(f"invalid semantic version: {version}")
-
-    claude = load_json(ROOT / "src/plugins/claude/plugin.json")
-    marketplace = load_json(ROOT / "src/plugins/claude/marketplace.json")
-    marketplace_plugin = get_single_plugin(marketplace, "Claude")
-    if claude.get("version") != version or marketplace_plugin.get("version") != version:
-        raise ValueError("distribution versions do not match")
+    if args.paper_only:
+        version = paper_version()
+    else:
+        manifest = load_json(ROOT / "src/plugins/portable/plugin.json")
+        version = manifest.get("version", "")
+        if not SEMVER.fullmatch(version):
+            raise ValueError(f"invalid semantic version: {version}")
+        claude = load_json(ROOT / "src/plugins/claude/plugin.json")
+        marketplace = load_json(ROOT / "src/plugins/claude/marketplace.json")
+        marketplace_plugin = get_single_plugin(marketplace, "Claude")
+        if (
+            claude.get("version") != version
+            or marketplace_plugin.get("version") != version
+        ):
+            raise ValueError("distribution versions do not match")
 
     if args.output.is_symlink():
         raise ValueError("output cannot be a symlink")
@@ -325,18 +407,24 @@ def main() -> None:
     packages.mkdir(parents=True)
     downloads.mkdir(parents=True)
 
-    portable = packages / f"coinbase-agent-plugin-v{version}"
-    claude_target = packages / f"coinbase-claude-v{version}"
-    codex_target = packages / f"coinbase-codex-v{version}"
-    build_portable(portable)
-    build_claude(claude_target)
-    build_codex(codex_target, portable)
-    validate_portable(portable, version)
-    validate_claude(claude_target, version)
-    validate_codex(codex_target, version)
+    if args.paper_only:
+        paper_target = packages / f"{PAPER_SKILL}-v{version}"
+        build_paper_bundle(paper_target)
+        package_dirs = (paper_target,)
+    else:
+        portable = packages / f"coinbase-agent-plugin-v{version}"
+        claude_target = packages / f"coinbase-claude-v{version}"
+        codex_target = packages / f"coinbase-codex-v{version}"
+        build_portable(portable)
+        build_claude(claude_target)
+        build_codex(codex_target, portable)
+        validate_portable(portable, version)
+        validate_claude(claude_target, version)
+        validate_codex(codex_target, version)
+        package_dirs = (portable, claude_target, codex_target)
 
     archives = []
-    for package in (portable, claude_target, codex_target):
+    for package in package_dirs:
         archives.extend(archive(package, downloads))
     checksums = [
         f"{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.name}"
