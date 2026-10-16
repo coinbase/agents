@@ -10,23 +10,23 @@ After connecting, try: “List my Coinbase portfolios. Do not trade or spend fun
 
 ## Coinbase CLI
 
-For agents with shell access, the optional [`@coinbase/coinbase-cli`](https://www.npmjs.com/package/@coinbase/coinbase-cli) provides local command-line access. It requires Node.js 22+ and separately configured CDP credentials. Installing this plugin does not install or authorize the CLI. Follow the [CLI setup reference](skills/coinbase/references/cli.md).
+For agents with shell access, the optional [`@coinbase/coinbase-cli`](https://www.npmjs.com/package/@coinbase/coinbase-cli) provides local command-line access. It requires Node.js 22+ and separately configured CDP credentials. Installing this plugin does not install or authorize the CLI. Follow the [CLI setup reference](skills/coinbase-for-agents/coinbase/references/cli.md).
 
 ## Agent skills
 
-[Agent Skills](https://agentskills.io/specification) provide reusable workflows and safety instructions. Start with [`coinbase`](skills/coinbase/SKILL.md), which guides setup and selects the appropriate skill. Execution references explain which operations are available through MCP or CLI.
+[Agent Skills](https://agentskills.io/specification) provide reusable workflows and safety instructions. Source skills are grouped by product under `skills/<product>/<skill>/`, with execution references inside each skill. Coinbase for Agents skills live under [`skills/coinbase-for-agents/`](skills/coinbase-for-agents/). Start with [`coinbase`](skills/coinbase-for-agents/coinbase/SKILL.md), which guides setup and selects the appropriate skill.
 
 | Skill | Purpose |
 | --- | --- |
-| [Coinbase](skills/coinbase/SKILL.md) | Setup, interface selection, and safety |
-| [Market data](skills/coinbase-market-data/SKILL.md) | Products, prices, order books, candles, and fees |
-| [Portfolios](skills/coinbase-portfolios/SKILL.md) | Balances, positions, portfolio management, and internal transfers |
-| [Trading](skills/coinbase-trading/SKILL.md) | Preview, place, inspect, edit, and cancel orders |
-| [Conversions](skills/coinbase-convert/SKILL.md) | Quote and execute supported currency conversions |
-| [Equities](skills/coinbase-equities/SKILL.md) | Stock trading for eligible accounts, with session and sizing rules |
-| [Futures](skills/coinbase-futures/SKILL.md) | Eligible CFM dated futures, contract sizing, and risk checks |
-| [x402](skills/coinbase-x402/SKILL.md) | Discover and purchase research within an approved budget |
-| [Watch](skills/coinbase-watch/SKILL.md) | Bounded streaming and monitoring; CLI only |
+| [Coinbase](skills/coinbase-for-agents/coinbase/SKILL.md) | Setup, interface selection, and safety |
+| [Market data](skills/coinbase-for-agents/coinbase-market-data/SKILL.md) | Products, prices, order books, candles, and fees |
+| [Portfolios](skills/coinbase-for-agents/coinbase-portfolios/SKILL.md) | Balances, positions, portfolio management, and internal transfers |
+| [Trading](skills/coinbase-for-agents/coinbase-trading/SKILL.md) | Preview, place, inspect, edit, and cancel orders |
+| [Conversions](skills/coinbase-for-agents/coinbase-convert/SKILL.md) | Quote and execute supported currency conversions |
+| [Equities](skills/coinbase-for-agents/coinbase-equities/SKILL.md) | Stock trading for eligible accounts, with session and sizing rules |
+| [Futures](skills/coinbase-for-agents/coinbase-futures/SKILL.md) | Eligible CFM dated futures, contract sizing, and risk checks |
+| [x402](skills/coinbase-for-agents/coinbase-x402/SKILL.md) | Discover and purchase research within an approved budget |
+| [Watch](skills/coinbase-for-agents/coinbase-watch/SKILL.md) | Bounded streaming and monitoring; CLI only |
 
 ## Plugin distributions
 
@@ -40,6 +40,8 @@ This repository is the canonical source for four generated distributions:
 Download versioned ZIP or tar archives from [Coinbase Agent Plugin downloads](https://coinbase.github.io/agents/), verify them against `SHA256SUMS`, and extract the package for your client. Plugin-format support does not imply Coinbase OAuth client approval; do not bypass rejected authentication.
 
 For local development, run `python3 scripts/build-distributions.py dist` and use the generated directories under `dist/site/packages/`. The repository root is not an installable plugin.
+
+The existing distributions select only the `coinbase-for-agents` product and place its skills directly under the generated package's `skills/` directory. Skill names, `/coinbase:coinbase`, and plugin installation paths are unchanged. Adding another product directory does not automatically include its skills or configure its MCP server in these packages.
 
 ### ChatGPT directory submission
 
@@ -86,7 +88,7 @@ hermes plugins enable coinbase
 
 Use the plugin key returned by `list` if different. Follow [Hermes's portable-plugin documentation](https://hermes-agent.nousresearch.com/docs/developer-guide/plugins/#portable-agent-plugins-v1-packages) and native OAuth setup. Reuse existing connections rather than adding duplicates.
 
-For standalone skills, use your harness's supported installation method and include the complete `skills/` directory so cross-skill references resolve. Preserve existing installations and settings.
+For standalone skills, use your harness's supported installation method. From source, install the skill directories inside `skills/coinbase-for-agents/` as siblings in the harness's skills directory, including their complete contents so cross-skill references resolve. Do not copy the product container as though it were a skill or assume every harness recursively discovers nested skills. Generated packages already contain the flat layout. Source URLs formerly under `skills/<skill>/` now use `skills/coinbase-for-agents/<skill>/`; update path-based installers and bookmarks. Preserve existing installations and settings.
 
 ## Safety and support
 

@@ -16,6 +16,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+COINBASE_SKILL_PRODUCTS = ("coinbase-for-agents",)
 EXPECTED_MCP_URL = "https://agents.coinbase.com/mcp"
 OUTPUT_MARKER = ".coinbase-agents-distributions"
 PRERELEASE_IDENTIFIER = r"(?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)"
@@ -74,6 +75,41 @@ def copy_tree(source: Path, target: Path) -> None:
     shutil.copytree(source, target)
 
 
+def copy_skills(
+    target: Path, products: tuple[str, ...] = COINBASE_SKILL_PRODUCTS
+) -> None:
+    source_root = ROOT / "skills"
+    if source_root.is_symlink() or not products:
+        raise ValueError(
+            "skills require a regular source directory and selected products"
+        )
+    selected = {}
+    for product in products:
+        if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", product):
+            raise ValueError(f"invalid skill product: {product}")
+        source = source_root / product
+        if source.is_symlink() or not source.is_dir():
+            raise ValueError(f"invalid skill product directory: {source}")
+        entries = sorted(source.iterdir())
+        if not entries:
+            raise ValueError(f"no skills in product: {source}")
+        for skill in entries:
+            if (
+                skill.is_symlink()
+                or not skill.is_dir()
+                or not (skill / "SKILL.md").is_file()
+            ):
+                raise ValueError(f"invalid skill entry: {skill}")
+            if skill.name in selected:
+                raise ValueError(
+                    f"duplicate skill across selected products: {skill.name}"
+                )
+            selected[skill.name] = skill
+    target.mkdir(parents=True)
+    for name, source in selected.items():
+        copy_tree(source, target / name)
+
+
 def copy_common(target: Path) -> None:
     copy_file(ROOT / "LICENSE", target / "LICENSE")
     copy_file(ROOT / "src/plugins/README.md", target / "README.md")
@@ -83,7 +119,7 @@ def build_portable(target: Path, manifest_dir: str = "portable") -> None:
     target.mkdir(parents=True)
     copy_file(ROOT / f"src/plugins/{manifest_dir}/plugin.json", target / "plugin.json")
     copy_file(ROOT / "src/plugins/portable/mcp.json", target / "mcp.json")
-    copy_tree(ROOT / "skills", target / "skills")
+    copy_skills(target / "skills")
     asset_dir = target / "com.openai/assets"
     asset_dir.mkdir(parents=True)
     copy_file(ROOT / "assets/coinbase.svg", asset_dir / "coinbase.svg")
@@ -110,7 +146,7 @@ def build_claude(target: Path) -> None:
         ROOT / "src/plugins/claude/marketplace.json",
         manifest_dir / "marketplace.json",
     )
-    copy_tree(ROOT / "skills", target / "skills")
+    copy_skills(target / "skills")
     copy_common(target)
 
 
@@ -128,17 +164,12 @@ def build_codex(target: Path, portable: Path) -> None:
 def validate_skills(root: Path) -> None:
     skills = root / "skills"
     entries = sorted(skills.iterdir())
-    if len(entries) != 9:
-        raise ValueError(f"expected 9 skills, found {len(entries)}")
+    if not entries:
+        raise ValueError(f"no skills in distribution: {skills}")
     for skill in entries:
         skill_file = skill / "SKILL.md"
         if not skill.is_dir() or not skill_file.is_file():
             raise ValueError(f"invalid skill entry: {skill}")
-        for reference in ("cli.md", "mcp.md"):
-            if not (skill / "references" / reference).is_file():
-                raise ValueError(
-                    f"missing reference: {skill / 'references' / reference}"
-                )
         text = skill_file.read_text()
         match = re.match(r"^---\n(.*?)\n---\n", text, re.DOTALL)
         if not match:

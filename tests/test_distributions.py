@@ -93,8 +93,8 @@ class DistributionTests(unittest.TestCase):
             (ROOT / "src/plugins/portable/mcp.json").read_bytes(),
         )
         expected = {
-            path.relative_to(ROOT / "skills"): path.read_bytes()
-            for path in (ROOT / "skills").rglob("*")
+            path.relative_to(ROOT / "skills/coinbase-for-agents"): path.read_bytes()
+            for path in (ROOT / "skills/coinbase-for-agents").rglob("*")
             if path.is_file()
         }
         actual = {
@@ -103,6 +103,32 @@ class DistributionTests(unittest.TestCase):
             if path.is_file()
         }
         self.assertEqual(actual, expected)
+
+    def test_all_distributions_preserve_flat_skill_layout(self):
+        portable = self.root / "portable"
+        claude = self.root / "claude"
+        codex = self.root / "codex"
+        builder.build_portable(portable)
+        builder.build_claude(claude)
+        builder.build_codex(codex, portable)
+        source = ROOT / "skills/coinbase-for-agents"
+        expected = {
+            path.relative_to(source): path.read_bytes()
+            for path in source.rglob("*")
+            if path.is_file()
+        }
+        for package in (portable, claude, codex / "plugins/coinbase", self.chatgpt):
+            with self.subTest(package=package):
+                builder.validate_skills(package)
+                builder.validate_links(package)
+                actual = {
+                    path.relative_to(package / "skills"): path.read_bytes()
+                    for path in (package / "skills").rglob("*")
+                    if path.is_file()
+                }
+                self.assertEqual(actual, expected)
+                self.assertTrue((package / "skills/coinbase/SKILL.md").is_file())
+                self.assertFalse((package / "skills/coinbase-for-agents").exists())
 
     def test_chatgpt_icon_preserves_artwork_at_larger_dimensions(self):
         source = ET.parse(ROOT / "assets/coinbase.svg").getroot()
