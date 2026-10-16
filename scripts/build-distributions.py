@@ -19,6 +19,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 COINBASE_SKILL_PRODUCTS = ("coinbase-cli", "coinbase-mcp")
 EXPECTED_MCP_URL = "https://agents.coinbase.com/mcp"
+EXPECTED_CHATGPT_MCP_URL = "https://agents.coinbase.com/mcp/chatgpt"
 OUTPUT_MARKER = ".coinbase-agents-distributions"
 PRERELEASE_IDENTIFIER = r"(?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)"
 SEMVER = re.compile(
@@ -149,7 +150,7 @@ def copy_common(target: Path) -> None:
 def build_portable(target: Path, manifest_dir: str = "portable") -> None:
     target.mkdir(parents=True)
     copy_file(ROOT / f"src/plugins/{manifest_dir}/plugin.json", target / "plugin.json")
-    copy_file(ROOT / "src/plugins/portable/mcp.json", target / "mcp.json")
+    copy_file(ROOT / f"src/plugins/{manifest_dir}/mcp.json", target / "mcp.json")
     copy_skills(target / "skills")
     asset_dir = target / "com.openai/assets"
     asset_dir.mkdir(parents=True)
@@ -229,7 +230,9 @@ def validate_links(root: Path) -> None:
                 raise ValueError(f"broken link: {document} -> {target}")
 
 
-def validate_portable(root: Path, version: str) -> None:
+def validate_portable(
+    root: Path, version: str, expected_mcp_url: str = EXPECTED_MCP_URL
+) -> None:
     manifest = load_json(root / "plugin.json")
     mcp = load_json(root / "mcp.json")
     unknown = set(manifest) - PORTABLE_FIELDS
@@ -251,7 +254,7 @@ def validate_portable(root: Path, version: str) -> None:
     server = mcp.get("mcpServers", {}).get("coinbase", {})
     if set(server) != {"type", "url"} or set(mcp["mcpServers"]) != {"coinbase"}:
         raise ValueError("invalid MCP server fields")
-    if server != {"type": "streamable-http", "url": EXPECTED_MCP_URL}:
+    if server != {"type": "streamable-http", "url": expected_mcp_url}:
         raise ValueError("invalid portable MCP server")
     for namespace, value in manifest.get("extensions", {}).items():
         if not re.fullmatch(r"(?:[a-z0-9-]+\.)+[a-z0-9-]+", namespace):
@@ -275,7 +278,7 @@ def validate_portable(root: Path, version: str) -> None:
 
 
 def validate_chatgpt(root: Path, version: str) -> None:
-    validate_portable(root, version)
+    validate_portable(root, version, expected_mcp_url=EXPECTED_CHATGPT_MCP_URL)
     interface = load_json(root / "plugin.json")["extensions"]["com.openai"]["interface"]
     if not 1 <= len(interface.get("shortDescription", "")) <= 30:
         raise ValueError("ChatGPT shortDescription must be 1–30 characters")

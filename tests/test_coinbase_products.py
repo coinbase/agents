@@ -64,6 +64,8 @@ class CoinbaseProductsTests(unittest.TestCase):
             self.assertIn(marker, cli)
         for marker in (
             "https://agents.coinbase.com/mcp",
+            "https://agents.coinbase.com/mcp/chatgpt",
+            "do not replace it with another client's endpoint",
             "native Streamable HTTP/OAuth flow",
             "PKCE",
             "coinbase_portfolios_list` with `{}`",

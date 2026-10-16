@@ -30,7 +30,7 @@ The existing distributions include the shared `coinbase` router and the `coinbas
 
 ### ChatGPT directory submission
 
-Use `coinbase-chatgpt-vX.Y.Z.zip` for the [OpenAI submission flow](https://developers.openai.com/plugins/deploy/submission). Its manifest lives under `src/plugins/chatgpt/`; it reuses the canonical skills, remote MCP configuration, and icon artwork without changing the portable, Claude Code, or Codex distributions. ChatGPT connects exclusively to the hosted MCP server using OAuth.
+Use `coinbase-chatgpt-vX.Y.Z.zip` for the [OpenAI submission flow](https://developers.openai.com/plugins/deploy/submission). Its manifest and MCP configuration live under `src/plugins/chatgpt/`; it reuses the canonical skills and icon artwork without changing the portable, Claude Code, or Codex distributions. ChatGPT connects to `https://agents.coinbase.com/mcp/chatgpt` using OAuth; the other distributions retain `https://agents.coinbase.com/mcp`.
 
 This package is not a published or approved listing. Publisher/domain verification, approved OAuth access, scans, reviewer access, test cases, and a demo recording must be completed separately. OpenAI's directory covers ChatGPT and Codex; its [plugin guidelines](https://developers.openai.com/plugins/plugin-guidelines) prohibit execution of money/crypto transfers and investment trades, and currently restrict commerce to physical goods. The shared skills still describe trading, transfers, and paid research; resolve those capability and policy conflicts before submission. A separate manifest does not restrict the tools exposed by the MCP server.
 

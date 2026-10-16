@@ -5,7 +5,7 @@ description: Connect hosted Coinbase MCP through native OAuth, verify access, an
 
 # Coinbase MCP
 
-Use the hosted Coinbase MCP product through the harness's native OAuth connection at `https://agents.coinbase.com/mcp`. No CLI, Node.js, CDP API key, shell access, separate wallet, or custom token helper is required. Installation and authentication do not authorize financial actions.
+Use the hosted Coinbase MCP product through the harness's native OAuth connection. Portable, Claude, and Codex packages use `https://agents.coinbase.com/mcp`; the ChatGPT package uses `https://agents.coinbase.com/mcp/chatgpt`. Keep the endpoint configured for the selected client; do not replace it with another client's endpoint. No CLI, Node.js, CDP API key, shell access, separate wallet, or custom token helper is required. Installation and authentication do not authorize financial actions.
 
 ## Safety before execution
 
@@ -20,7 +20,7 @@ Use the hosted Coinbase MCP product through the harness's native OAuth connectio
 
 ## Connect and verify
 
-1. Reuse the harness's approved Coinbase connection to `https://agents.coinbase.com/mcp`. Otherwise use its native Streamable HTTP/OAuth flow, following the [current supported-client guide](https://docs.cdp.coinbase.com/ai-agents/coinbase-for-agents/coinbase-mcp). A plugin manifest is not client approval.
+1. Reuse the harness's approved Coinbase connection for the selected client and its configured endpoint. Otherwise use its native Streamable HTTP/OAuth flow, following the [current supported-client guide](https://docs.cdp.coinbase.com/ai-agents/coinbase-for-agents/coinbase-mcp). A plugin manifest is not client approval.
 2. Let the harness handle discovery, client registration, PKCE, callbacks, refresh, and secure credential storage. Have the user sign in on Coinbase and approve the intended portfolios and required scopes. Never ask for passwords, one-time codes, authorization codes, keys, or tokens in chat.
 3. Discover tools through the harness (`tools/list`, following pagination). Use the exact exposed names and input schemas; hosts may add a namespace to the core `coinbase_` names used in these skills.
 4. Call `coinbase_portfolios_list` with `{}`. Check JSON-RPC errors and tool `isError`, not just HTTP status. An empty portfolio list is valid. Report verification without dumping account details. Never trade, transfer, convert, pay, or change a portfolio to test setup.
