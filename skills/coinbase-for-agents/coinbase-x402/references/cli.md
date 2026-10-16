@@ -1,6 +1,6 @@
 # x402 with the local CLI
 
-Apply the [shared x402 workflow](../SKILL.md) and [CLI execution rules](../../coinbase/references/cli.md). Use the intended environment/key and discover installed command help/templates:
+Apply the [shared x402 workflow](../SKILL.md) and [CLI execution rules](../../coinbase-for-agents/references/cli.md). Use the intended environment/key and discover installed command help/templates:
 
 ```sh
 coinbase x402 resources --help

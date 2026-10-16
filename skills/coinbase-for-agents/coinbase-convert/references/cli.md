@@ -1,6 +1,6 @@
 # Conversions with the local CLI
 
-Apply the [shared workflow](../SKILL.md) and [CLI execution rules](../../coinbase/references/cli.md). Discover help and templates first. Patterns:
+Apply the [shared workflow](../SKILL.md) and [CLI execution rules](../../coinbase-for-agents/references/cli.md). Discover help and templates first. Patterns:
 
 ```text
 coinbase convert quote from=<source-currency> to=<destination-currency> amount=<source-amount>

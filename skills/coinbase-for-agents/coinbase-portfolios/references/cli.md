@@ -1,6 +1,6 @@
 # Portfolios with the local CLI
 
-Apply the [shared workflow](../SKILL.md) and [CLI execution rules](../../coinbase/references/cli.md). Discover command help/templates and use the intended `-e <environment>` consistently.
+Apply the [shared workflow](../SKILL.md) and [CLI execution rules](../../coinbase-for-agents/references/cli.md). Discover command help/templates and use the intended `-e <environment>` consistently.
 
 | Operation | Command pattern |
 | --- | --- |

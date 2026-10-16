@@ -1,32 +1,16 @@
 # Coinbase Agents
 
-Skills and plugins for using Coinbase with AI agents. Read market data, manage portfolios, trade, and access paid research through Coinbase MCP or the Coinbase CLI.
+Skills and plugins for using Coinbase products with AI agents. Start with the [`coinbase` skill](skills/coinbase/SKILL.md), which selects the right product and loads its workflows.
 
-## Model Context Protocol (MCP)
+## Products
 
-Coinbase hosts a remote MCP server at **https://agents.coinbase.com/mcp**. Connect through a Coinbase-approved client's native OAuth flow; no local CLI or API key is required. See the [connection guide](https://docs.cdp.coinbase.com/ai-agents/coinbase-for-agents/coinbase-mcp) for supported clients and setup.
+[Agent Skills](https://agentskills.io/specification) provide reusable workflows and safety instructions. Each product owns its setup, capability skills, and execution references.
 
-After connecting, try: “List my Coinbase portfolios. Do not trade or spend funds.”
+| Product | Purpose | Entry skill |
+| --- | --- | --- |
+| Coinbase for Agents | Market data, portfolios, trading, conversions, and research through Coinbase MCP or Coinbase CLI | [coinbase-for-agents](skills/coinbase-for-agents/coinbase-for-agents/SKILL.md) |
 
-## Coinbase CLI
-
-For agents with shell access, the optional [`@coinbase/coinbase-cli`](https://www.npmjs.com/package/@coinbase/coinbase-cli) provides local command-line access. It requires Node.js 22+ and separately configured CDP credentials. Installing this plugin does not install or authorize the CLI. Follow the [CLI setup reference](skills/coinbase-for-agents/coinbase/references/cli.md).
-
-## Agent skills
-
-[Agent Skills](https://agentskills.io/specification) provide reusable workflows and safety instructions. Source skills are grouped by product under `skills/<product>/<skill>/`, with execution references inside each skill. Coinbase for Agents skills live under [`skills/coinbase-for-agents/`](skills/coinbase-for-agents/). Start with [`coinbase`](skills/coinbase-for-agents/coinbase/SKILL.md), which guides setup and selects the appropriate skill.
-
-| Skill | Purpose |
-| --- | --- |
-| [Coinbase](skills/coinbase-for-agents/coinbase/SKILL.md) | Setup, interface selection, and safety |
-| [Market data](skills/coinbase-for-agents/coinbase-market-data/SKILL.md) | Products, prices, order books, candles, and fees |
-| [Portfolios](skills/coinbase-for-agents/coinbase-portfolios/SKILL.md) | Balances, positions, portfolio management, and internal transfers |
-| [Trading](skills/coinbase-for-agents/coinbase-trading/SKILL.md) | Preview, place, inspect, edit, and cancel orders |
-| [Conversions](skills/coinbase-for-agents/coinbase-convert/SKILL.md) | Quote and execute supported currency conversions |
-| [Equities](skills/coinbase-for-agents/coinbase-equities/SKILL.md) | Stock trading for eligible accounts, with session and sizing rules |
-| [Futures](skills/coinbase-for-agents/coinbase-futures/SKILL.md) | Eligible CFM dated futures, contract sizing, and risk checks |
-| [x402](skills/coinbase-for-agents/coinbase-x402/SKILL.md) | Discover and purchase research within an approved budget |
-| [Watch](skills/coinbase-for-agents/coinbase-watch/SKILL.md) | Bounded streaming and monitoring; CLI only |
+The shared router stays at `skills/coinbase/`. Product skills live under `skills/<product>/<skill>/`. Add a product entry here and in the router when introducing a new product; keep individual capability lists inside that product.
 
 ## Plugin distributions
 
@@ -41,7 +25,7 @@ Download versioned ZIP or tar archives from [Coinbase Agent Plugin downloads](ht
 
 For local development, run `python3 scripts/build-distributions.py dist` and use the generated directories under `dist/site/packages/`. The repository root is not an installable plugin.
 
-The existing distributions select only the `coinbase-for-agents` product and place its skills directly under the generated package's `skills/` directory. Skill names, `/coinbase:coinbase`, and plugin installation paths are unchanged. Adding another product directory does not automatically include its skills or configure its MCP server in these packages.
+The existing distributions include the shared `coinbase` router and the `coinbase-for-agents` product. The builder flattens the selected skills into the package's `skills/` directory and updates local Markdown links to match. Plugin names, `/coinbase:coinbase`, and installation paths are unchanged. Adding another product directory does not automatically ship it or configure its MCP server.
 
 ### ChatGPT directory submission
 
@@ -88,13 +72,13 @@ hermes plugins enable coinbase
 
 Use the plugin key returned by `list` if different. Follow [Hermes's portable-plugin documentation](https://hermes-agent.nousresearch.com/docs/developer-guide/plugins/#portable-agent-plugins-v1-packages) and native OAuth setup. Reuse existing connections rather than adding duplicates.
 
-For standalone skills, use your harness's supported installation method. From source, install the skill directories inside `skills/coinbase-for-agents/` as siblings in the harness's skills directory, including their complete contents so cross-skill references resolve. Do not copy the product container as though it were a skill or assume every harness recursively discovers nested skills. Generated packages already contain the flat layout. Source URLs formerly under `skills/<skill>/` now use `skills/coinbase-for-agents/<skill>/`; update path-based installers and bookmarks. Preserve existing installations and settings.
+For standalone skills, build or download a generated package and install its complete `skills/` directory using your harness's supported method. This includes the shared router, selected product skills, and links adjusted for the flat installed layout. Do not flatten source directories by hand or assume every harness discovers nested skills. The router remains at `skills/coinbase/` in source; product-specific source paths now use `skills/coinbase-for-agents/<skill>/`. Update path-based source installers and preserve existing installations and settings.
 
 ## Safety and support
 
 Keep native approval controls enabled. Trades, transfers, conversions, paid research, and recurring activity require explicit authorization; installation and authentication do not authorize financial actions.
 
-For help, use [CDP Discord](https://discord.com/invite/cdp). Report vulnerabilities privately through [SECURITY.md](SECURITY.md). Remote access can be revoked in [Coinbase Security → Connections](https://accounts.coinbase.com/security/connections); CLI keys are managed separately. Uninstalling does not revoke access.
+For help, use [CDP Discord](https://discord.com/invite/cdp). Report vulnerabilities privately through [SECURITY.md](SECURITY.md). Follow the selected product's entry skill for connection and revocation instructions; uninstalling does not itself revoke access.
 
 ## Contributing
 

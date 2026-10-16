@@ -1,6 +1,6 @@
 # Market data with the local CLI
 
-Apply the [shared workflow](../SKILL.md) and [CLI execution rules](../../coinbase/references/cli.md). Check `coinbase products --help` and the chosen command's help first; command spelling and granularity enums can differ by version.
+Apply the [shared workflow](../SKILL.md) and [CLI execution rules](../../coinbase-for-agents/references/cli.md). Check `coinbase products --help` and the chosen command's help first; command spelling and granularity enums can differ by version.
 
 Read-only examples, after confirming the requested product:
 

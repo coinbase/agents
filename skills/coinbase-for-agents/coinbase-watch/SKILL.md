@@ -5,7 +5,7 @@ description: Plan bounded Coinbase streaming or conditional monitoring, such as 
 
 # Coinbase conditional monitoring
 
-Follow [Coinbase interface selection and safety](../coinbase/SKILL.md). This capability is **CLI-only** in this package. If remote MCP is selected, read the [MCP limitation reference](references/mcp.md) and do not silently install/switch to CLI. If the user selects supported CLI monitoring, load the [CLI reference](references/cli.md).
+Follow [Coinbase for Agents interface selection and safety](../coinbase-for-agents/SKILL.md). This capability is **CLI-only** in this package. If remote MCP is selected, read the [MCP limitation reference](references/mcp.md) and do not silently install/switch to CLI. If the user selects supported CLI monitoring, load the [CLI reference](references/cli.md).
 
 ## Agree on the monitoring plan
 

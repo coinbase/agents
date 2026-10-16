@@ -1,6 +1,6 @@
 # x402 with remote MCP
 
-Apply the [shared x402 workflow](../SKILL.md) and [MCP execution rules](../../coinbase/references/mcp.md). No CLI, CDP key, or separate wallet is needed for the hosted flow.
+Apply the [shared x402 workflow](../SKILL.md) and [MCP execution rules](../../coinbase-for-agents/references/mcp.md). No CLI, CDP key, or separate wallet is needed for the hosted flow.
 
 | Step | Core tool |
 | --- | --- |

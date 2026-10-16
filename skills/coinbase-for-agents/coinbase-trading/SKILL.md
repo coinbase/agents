@@ -5,7 +5,7 @@ description: Preview, place, verify, edit, cancel, or close Coinbase orders thro
 
 # Coinbase trading
 
-First follow [Coinbase interface selection and safety](../coinbase/SKILL.md). Load only the selected [MCP reference](references/mcp.md) or [CLI reference](references/cli.md). Both implement the workflow below; do not mix credentials mid-operation.
+First follow [Coinbase for Agents interface selection and safety](../coinbase-for-agents/SKILL.md). Load only the selected [MCP reference](references/mcp.md) or [CLI reference](references/cli.md). Both implement the workflow below; do not mix credentials mid-operation.
 
 ## Plan, preview, authorize, submit, verify
 

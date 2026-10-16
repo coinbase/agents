@@ -1,9 +1,9 @@
 ---
-name: coinbase
-description: Connect Coinbase, choose remote MCP or local CLI, verify access, and route requests for balances, market data, portfolios, trading, conversions, futures, equities, or x402 research. Start here for setup, interface selection, authentication errors, and disconnecting.
+name: coinbase-for-agents
+description: Set up and use Coinbase for Agents through Coinbase MCP or Coinbase CLI. Select an interface, verify access, and route requests for portfolios, market data, trading, conversions, futures, equities, research, or monitoring. Use for product-specific authentication errors and disconnecting.
 ---
 
-# Coinbase
+# Coinbase for Agents
 
 One set of workflows, two execution interfaces. Remote MCP uses harness-managed Coinbase OAuth at `https://agents.coinbase.com/mcp`; the local CLI uses separately configured CDP API-key credentials. Neither installation nor authentication authorizes financial actions.
 

@@ -1,6 +1,6 @@
 # Market data with remote MCP
 
-Apply the [shared workflow](../SKILL.md) and [MCP execution rules](../../coinbase/references/mcp.md). Discover schemas and host namespaces first.
+Apply the [shared workflow](../SKILL.md) and [MCP execution rules](../../coinbase-for-agents/references/mcp.md). Discover schemas and host namespaces first.
 
 | Need | Core tool |
 | --- | --- |

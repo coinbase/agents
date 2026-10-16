@@ -5,7 +5,7 @@ description: Quote, approve, execute, and verify supported Coinbase currency con
 
 # Coinbase conversions
 
-Follow [Coinbase interface selection and safety](../coinbase/SKILL.md), then load only the [MCP reference](references/mcp.md) or [CLI reference](references/cli.md).
+Follow [Coinbase for Agents interface selection and safety](../coinbase-for-agents/SKILL.md), then load only the [MCP reference](references/mcp.md) or [CLI reference](references/cli.md).
 
 1. Confirm the source and destination currencies, source-denominated amount, and intended portfolio/account scope. Discover support rather than assuming every currency pair can be converted. Buying BTC with USDC is a [trade](../coinbase-trading/SKILL.md), not this flow.
 2. Request a quote on the selected interface. Present the returned rate, fees, and amounts. Disclose that no expiry timestamp is available when absent; never invent a TTL or a guaranteed execution window. Retain the returned quote ID and original source/destination currencies.

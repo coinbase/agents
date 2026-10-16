@@ -5,7 +5,7 @@ description: Discover and pay for curated x402 research or data using Coinbase r
 
 # Coinbase x402 research
 
-Follow [Coinbase interface selection and safety](../coinbase/SKILL.md), then load only the [MCP reference](references/mcp.md) or [CLI reference](references/cli.md). The hosted path uses OAuth; CLI uses its separately configured API key. Support varies by client/account.
+Follow [Coinbase for Agents interface selection and safety](../coinbase-for-agents/SKILL.md), then load only the [MCP reference](references/mcp.md) or [CLI reference](references/cli.md). The hosted path uses OAuth; CLI uses its separately configured API key. Support varies by client/account.
 
 ## Discover, authorize, fetch, report
 

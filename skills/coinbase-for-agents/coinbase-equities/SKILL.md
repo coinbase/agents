@@ -5,7 +5,7 @@ description: Plan and manage eligible Coinbase stock or ETF orders through remot
 
 # Coinbase equities
 
-Follow [Coinbase interface selection](../coinbase/SKILL.md) and the [shared trading workflow](../coinbase-trading/SKILL.md). Load only the [MCP reference](references/mcp.md) or [CLI reference](references/cli.md). Equity support is account-, product-, and interface-dependent.
+Follow [Coinbase for Agents interface selection](../coinbase-for-agents/SKILL.md) and the [shared trading workflow](../coinbase-trading/SKILL.md). Load only the [MCP reference](references/mcp.md) or [CLI reference](references/cli.md). Equity support is account-, product-, and interface-dependent.
 
 ## Plan the equity-specific terms
 

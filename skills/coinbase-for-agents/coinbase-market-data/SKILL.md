@@ -5,7 +5,7 @@ description: Read Coinbase products, prices, recent trades, order books, best bi
 
 # Coinbase market data
 
-Follow [Coinbase interface selection and safety](../coinbase/SKILL.md), then load only the [MCP reference](references/mcp.md) or [CLI reference](references/cli.md).
+Follow [Coinbase for Agents interface selection and safety](../coinbase-for-agents/SKILL.md), then load only the [MCP reference](references/mcp.md) or [CLI reference](references/cli.md).
 
 1. Identify the requested product, quote currency, metric, and time range. Discover exact product IDs and eligibility; do not substitute a different pair or an expired futures contract.
 2. Use the selected interface's supported product/data operation. Filter and paginate deliberately rather than assuming the first page is complete.

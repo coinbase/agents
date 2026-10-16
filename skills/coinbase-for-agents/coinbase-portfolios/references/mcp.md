@@ -1,6 +1,6 @@
 # Portfolios with remote MCP
 
-Apply the [shared workflow](../SKILL.md) and [MCP execution rules](../../coinbase/references/mcp.md).
+Apply the [shared workflow](../SKILL.md) and [MCP execution rules](../../coinbase-for-agents/references/mcp.md).
 
 | Operation | Core tool |
 | --- | --- |

@@ -87,16 +87,43 @@ class DistributionTests(unittest.TestCase):
             self.assertNotIn("privacyPolicyURL", interface)
             self.assertNotIn("termsOfServiceURL", interface)
 
+    def expected_packaged_skills(self):
+        skills = [
+            ROOT / "skills/coinbase",
+            *sorted((ROOT / "skills/coinbase-for-agents").iterdir()),
+        ]
+        expected = {
+            Path(skill.name) / path.relative_to(skill): path.read_bytes()
+            for skill in skills
+            for path in skill.rglob("*")
+            if path.is_file()
+        }
+        router = Path("coinbase/SKILL.md")
+        expected[router] = expected[router].replace(
+            b"../coinbase-for-agents/coinbase-for-agents/SKILL.md",
+            b"../coinbase-for-agents/SKILL.md",
+        )
+        return expected
+
+    def test_source_router_and_readme_list_products_not_capability_skills(self):
+        router = ROOT / "skills/coinbase/SKILL.md"
+        product = ROOT / "skills/coinbase-for-agents/coinbase-for-agents/SKILL.md"
+        self.assertIn("name: coinbase\n", router.read_text())
+        self.assertIn("name: coinbase-for-agents\n", product.read_text())
+        for document in (router, ROOT / "README.md"):
+            text = document.read_text()
+            self.assertIn("| Product |", text)
+            self.assertIn("coinbase-for-agents/coinbase-for-agents/SKILL.md", text)
+            self.assertNotIn("coinbase-trading/SKILL.md", text)
+        self.assertIn("coinbase-trading/SKILL.md", product.read_text())
+        builder.validate_links(ROOT)
+
     def test_chatgpt_reuses_canonical_mcp_and_skills(self):
         self.assertEqual(
             (self.chatgpt / "mcp.json").read_bytes(),
             (ROOT / "src/plugins/portable/mcp.json").read_bytes(),
         )
-        expected = {
-            path.relative_to(ROOT / "skills/coinbase-for-agents"): path.read_bytes()
-            for path in (ROOT / "skills/coinbase-for-agents").rglob("*")
-            if path.is_file()
-        }
+        expected = self.expected_packaged_skills()
         actual = {
             path.relative_to(self.chatgpt / "skills"): path.read_bytes()
             for path in (self.chatgpt / "skills").rglob("*")
@@ -111,12 +138,7 @@ class DistributionTests(unittest.TestCase):
         builder.build_portable(portable)
         builder.build_claude(claude)
         builder.build_codex(codex, portable)
-        source = ROOT / "skills/coinbase-for-agents"
-        expected = {
-            path.relative_to(source): path.read_bytes()
-            for path in source.rglob("*")
-            if path.is_file()
-        }
+        expected = self.expected_packaged_skills()
         for package in (portable, claude, codex / "plugins/coinbase", self.chatgpt):
             with self.subTest(package=package):
                 builder.validate_skills(package)
@@ -128,7 +150,11 @@ class DistributionTests(unittest.TestCase):
                 }
                 self.assertEqual(actual, expected)
                 self.assertTrue((package / "skills/coinbase/SKILL.md").is_file())
-                self.assertFalse((package / "skills/coinbase-for-agents").exists())
+                self.assertTrue(
+                    (package / "skills/coinbase-for-agents/SKILL.md").is_file()
+                )
+                router = (package / "skills/coinbase/SKILL.md").read_text()
+                self.assertIn("](../coinbase-for-agents/SKILL.md)", router)
 
     def test_chatgpt_icon_preserves_artwork_at_larger_dimensions(self):
         source = ET.parse(ROOT / "assets/coinbase.svg").getroot()

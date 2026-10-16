@@ -1,6 +1,6 @@
 # Trading with remote MCP
 
-Apply the [shared trading workflow](../SKILL.md) and [MCP connection rules](../../coinbase/references/mcp.md). No CLI or API key is needed. Discover current schemas and the host's actual namespaced tool names.
+Apply the [shared trading workflow](../SKILL.md) and [MCP connection rules](../../coinbase-for-agents/references/mcp.md). No CLI or API key is needed. Discover current schemas and the host's actual namespaced tool names.
 
 | Step | Core tools |
 | --- | --- |

@@ -5,6 +5,7 @@ import gzip
 import hashlib
 import html
 import json
+import os
 import re
 import shutil
 import stat
@@ -83,7 +84,10 @@ def copy_skills(
         raise ValueError(
             "skills require a regular source directory and selected products"
         )
-    selected = {}
+    router = source_root / "coinbase"
+    if router.is_symlink() or not (router / "SKILL.md").is_file():
+        raise ValueError(f"invalid shared router skill: {router}")
+    selected = {"coinbase": router}
     for product in products:
         if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", product):
             raise ValueError(f"invalid skill product: {product}")
@@ -106,8 +110,35 @@ def copy_skills(
                 )
             selected[skill.name] = skill
     target.mkdir(parents=True)
-    for name, source in selected.items():
-        copy_tree(source, target / name)
+    destinations = {
+        source.resolve(): target / name for name, source in selected.items()
+    }
+    for source, destination in destinations.items():
+        copy_tree(source, destination)
+    for source, destination in destinations.items():
+        rebase_skill_links(source, destination, destinations)
+
+
+def rebase_skill_links(
+    source: Path, target: Path, destinations: dict[Path, Path]
+) -> None:
+    for document in source.rglob("*.md"):
+        output = target / document.relative_to(source)
+
+        def rebase(match: re.Match) -> str:
+            raw = match.group(1)
+            path, separator, fragment = raw.partition("#")
+            if not path or "://" in path or path.startswith("mailto:"):
+                return match.group(0)
+            resolved = (document.parent / path).resolve()
+            for original, destination in destinations.items():
+                if resolved.is_relative_to(original):
+                    mapped = destination / resolved.relative_to(original)
+                    relative = Path(os.path.relpath(mapped, output.parent)).as_posix()
+                    return f"]({relative}{separator}{fragment})"
+            raise ValueError(f"link outside selected skills: {document} -> {raw}")
+
+        output.write_text(re.sub(r"\]\(([^)]+)\)", rebase, document.read_text()))
 
 
 def copy_common(target: Path) -> None:

@@ -1,6 +1,6 @@
 # Trading with the local CLI
 
-Apply the [shared trading workflow](../SKILL.md) and [CLI execution rules](../../coinbase/references/cli.md). Discover installed help/templates first:
+Apply the [shared trading workflow](../SKILL.md) and [CLI execution rules](../../coinbase-for-agents/references/cli.md). Discover installed help/templates first:
 
 ```sh
 coinbase orders create --help

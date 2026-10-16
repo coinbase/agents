@@ -1,6 +1,6 @@
 # Monitoring with the local CLI
 
-Apply the [shared monitoring plan](../SKILL.md) and [CLI execution rules](../../coinbase/references/cli.md). Inspect installed stream support and valid predicate fields before use:
+Apply the [shared monitoring plan](../SKILL.md) and [CLI execution rules](../../coinbase-for-agents/references/cli.md). Inspect installed stream support and valid predicate fields before use:
 
 ```sh
 coinbase products ticker --help

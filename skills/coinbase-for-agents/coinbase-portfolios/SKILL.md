@@ -5,7 +5,7 @@ description: Read Coinbase balances and positions, list or manage portfolios, an
 
 # Coinbase portfolios
 
-Follow [Coinbase interface selection and safety](../coinbase/SKILL.md), then load only the [MCP reference](references/mcp.md) or [CLI reference](references/cli.md). OAuth portfolio grants and CLI key scopes are separate; never assume they cover the same funds.
+Follow [Coinbase for Agents interface selection and safety](../coinbase-for-agents/SKILL.md), then load only the [MCP reference](references/mcp.md) or [CLI reference](references/cli.md). OAuth portfolio grants and CLI key scopes are separate; never assume they cover the same funds.
 
 ## Read and select
 

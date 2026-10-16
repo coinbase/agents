@@ -5,7 +5,7 @@ description: Plan, preview, and manage eligible CFM dated futures orders through
 
 # Coinbase dated futures
 
-Follow [Coinbase interface selection](../coinbase/SKILL.md) and the [shared trading workflow](../coinbase-trading/SKILL.md). Load only the [MCP reference](references/mcp.md) or [CLI reference](references/cli.md). These are real leveraged products; losses and liquidation are possible.
+Follow [Coinbase for Agents interface selection](../coinbase-for-agents/SKILL.md) and the [shared trading workflow](../coinbase-trading/SKILL.md). Load only the [MCP reference](references/mcp.md) or [CLI reference](references/cli.md). These are real leveraged products; losses and liquidation are possible.
 
 1. Verify account eligibility and discover the current CFM contract. Dated product IDs roll; do not reuse an expired example or assume a spot ticker identifies a futures contract.
 2. Futures require the eligible default portfolio. Discover its actual UUID and confirm access; never derive it from a user UUID or assume an isolated spot portfolio is eligible.
