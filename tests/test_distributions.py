@@ -3,6 +3,7 @@ import importlib.util
 import json
 import subprocess
 import sys
+import tarfile
 import tempfile
 import unittest
 import xml.etree.ElementTree as ET
@@ -86,12 +87,37 @@ class DistributionTests(unittest.TestCase):
             self.assertNotIn("supportURL", interface)
             self.assertNotIn("privacyPolicyURL", interface)
             self.assertNotIn("termsOfServiceURL", interface)
+            self.assertEqual(
+                (package / "mcp.json").read_bytes(),
+                (ROOT / "src/plugins/portable/mcp.json").read_bytes(),
+            )
 
-    def test_chatgpt_reuses_canonical_mcp_and_skills(self):
+    def test_chatgpt_uses_channel_mcp_endpoint(self):
+        config = builder.load_json(self.chatgpt / "mcp.json")
         self.assertEqual(
-            (self.chatgpt / "mcp.json").read_bytes(),
-            (ROOT / "src/plugins/portable/mcp.json").read_bytes(),
+            config["mcpServers"],
+            {
+                "coinbase": {
+                    "type": "streamable-http",
+                    "url": "https://agents.coinbase.com/mcp/chatgpt",
+                }
+            },
         )
+
+    def test_chatgpt_rejects_other_mcp_endpoints(self):
+        path = self.chatgpt / "mcp.json"
+        config = builder.load_json(path)
+        for url in (
+            "https://agents.coinbase.com/mcp",
+            "https://example.com/mcp/chatgpt",
+        ):
+            with self.subTest(url=url):
+                config["mcpServers"]["coinbase"]["url"] = url
+                path.write_text(json.dumps(config))
+                with self.assertRaisesRegex(ValueError, "MCP server"):
+                    builder.validate_chatgpt(self.chatgpt, self.version)
+
+    def test_chatgpt_reuses_canonical_skills(self):
         expected = {
             path.relative_to(ROOT / "skills"): path.read_bytes()
             for path in (ROOT / "skills").rglob("*")
@@ -159,6 +185,18 @@ class DistributionTests(unittest.TestCase):
         )
         site = output / "site"
         latest = builder.load_json(site / "latest.json")
+        packages = site / "packages"
+        for package, config_path, url in (
+            ("agent-plugin", "mcp.json", "https://agents.coinbase.com/mcp"),
+            ("claude", ".claude-plugin/plugin.json", "https://agents.coinbase.com/mcp"),
+            ("codex", "plugins/coinbase/mcp.json", "https://agents.coinbase.com/mcp"),
+            ("chatgpt", "mcp.json", "https://agents.coinbase.com/mcp/chatgpt"),
+        ):
+            with self.subTest(package=package):
+                config = builder.load_json(
+                    packages / f"coinbase-{package}-v{self.version}" / config_path
+                )
+                self.assertEqual(config["mcpServers"]["coinbase"]["url"], url)
         self.assertEqual(len(latest["downloads"]), 8)
         for line in (site / "downloads/SHA256SUMS").read_text().splitlines():
             digest, filename = line.split("  ")
@@ -176,6 +214,18 @@ class DistributionTests(unittest.TestCase):
             self.assertIn(f"{name}/plugin.json", archive.namelist())
             self.assertIn(f"{name}/mcp.json", archive.namelist())
             self.assertIn(f"{name}/skills/coinbase/SKILL.md", archive.namelist())
+            config = json.loads(archive.read(f"{name}/mcp.json"))
+            self.assertEqual(
+                config["mcpServers"]["coinbase"]["url"],
+                "https://agents.coinbase.com/mcp/chatgpt",
+            )
+        with tarfile.open(site / "downloads" / f"{name}.tar.gz") as archive:
+            with archive.extractfile(f"{name}/mcp.json") as config_file:
+                config = json.load(config_file)
+            self.assertEqual(
+                config["mcpServers"]["coinbase"]["url"],
+                "https://agents.coinbase.com/mcp/chatgpt",
+            )
 
 
 if __name__ == "__main__":

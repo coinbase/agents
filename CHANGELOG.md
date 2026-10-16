@@ -2,6 +2,7 @@
 
 ## 0.0.1 — Unreleased
 
+- Route the ChatGPT distribution to `/mcp/chatgpt`; keep portable, Claude, and Codex on `/mcp` and validate each distribution's endpoint.
 - Add a separate ChatGPT directory distribution with submission listing URLs, a shorter subtitle, and 64×64 SVG dimensions; preserve the existing portable, Claude, and Codex packages.
 - Direct Cursor users to install the portable Agent Plugin instead of adding MCP to `~/.cursor/mcp.json`.
 - Treat this repository as canonical source instead of an installable plugin root.

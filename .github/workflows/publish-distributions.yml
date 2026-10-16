@@ -30,7 +30,7 @@ jobs:
             src/plugins/portable/plugin.json src/plugins/chatgpt/plugin.json
           uvx --from 'check-jsonschema==0.34.1' check-jsonschema \
             --schemafile schemas/1.0.0/mcp.schema.json \
-            src/plugins/portable/mcp.json
+            src/plugins/portable/mcp.json src/plugins/chatgpt/mcp.json
 
       - name: Build plugin distributions
         run: python3 scripts/build-distributions.py dist
