@@ -15,7 +15,7 @@
         "shortDescription": "Coinbase account workflows",
         "longDescription": "Workflows for portfolios, market data, authorized trading, conversions, and budgeted x402 research through Coinbase's remote MCP server with OAuth.",
         "developerName": "Coinbase",
-        "category": "Productivity",
+        "category": "Finance",
         "capabilities": ["Read", "Write"],
         "logo": "./com.openai/assets/coinbase.svg",
         "composerIcon": "./com.openai/assets/coinbase.svg",

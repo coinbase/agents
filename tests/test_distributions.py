@@ -36,10 +36,11 @@ class DistributionTests(unittest.TestCase):
             interface[field] = value
         path.write_text(json.dumps(manifest))
 
-    def test_chatgpt_listing_urls(self):
+    def test_chatgpt_listing_metadata(self):
         builder.validate_chatgpt(self.chatgpt, self.version)
         manifest = builder.load_json(self.chatgpt / "plugin.json")
         interface = manifest["extensions"]["com.openai"]["interface"]
+        self.assertEqual(interface["category"], "Finance")
         expected = {
             "websiteURL": "https://www.coinbase.com",
             "supportURL": "https://help.coinbase.com/en",
