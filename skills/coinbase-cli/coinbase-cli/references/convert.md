@@ -1,13 +1,8 @@
----
-name: coinbase-cli-convert
-description: Quote, approve, execute, and verify supported Coinbase currency conversions through Coinbase CLI, such as USD and USDC. Use for fiat/stablecoin conversion requests, not crypto buy/sell orders.
----
-
 # Coinbase CLI: conversions
 
-First follow [Coinbase CLI setup and safety](../coinbase-cli/SKILL.md). Use only Coinbase CLI for this workflow; do not switch products or credentials to retry an uncertain financial write.
+First follow [Coinbase CLI setup and safety](../SKILL.md). Use only Coinbase CLI for this workflow; do not switch products or credentials to retry an uncertain financial write.
 
-1. Confirm the source and destination currencies, source-denominated amount, and intended portfolio/account scope. Discover support rather than assuming every currency pair can be converted. Buying BTC with USDC is a [trade](../coinbase-cli-trading/SKILL.md), not this flow.
+1. Confirm the source and destination currencies, source-denominated amount, and intended portfolio/account scope. Discover support rather than assuming every currency pair can be converted. Buying BTC with USDC is a [trade](trading.md), not this flow.
 2. Request a quote on the Coinbase CLI. Present the returned rate, fees, and amounts. Disclose that no expiry timestamp is available when absent; never invent a TTL or a guaranteed execution window. Retain the returned quote ID and original source/destination currencies.
 3. Obtain approval for the quoted terms before execution. Quoting is not conversion approval.
 4. Execute using the returned quote ID and fields required by the current schema. If the quote expired or terms changed, obtain a fresh quote and renewed approval instead of silently accepting a new rate.

@@ -40,21 +40,23 @@ Client registration, Coinbase client approval, user consent, OAuth scopes, and p
 
 ## Choose a capability
 
-| Skill | Workflow |
+Read the applicable guide before planning or executing a workflow; setup alone does not include its tool contract or capability-specific safeguards.
+
+| Guide | Workflow |
 | --- | --- |
-| [coinbase-mcp-market-data](../coinbase-mcp-market-data/SKILL.md) | Products, prices, books, candles, and fees |
-| [coinbase-mcp-portfolios](../coinbase-mcp-portfolios/SKILL.md) | Balances, portfolio management, and internal transfers |
-| [coinbase-mcp-trading](../coinbase-mcp-trading/SKILL.md) | Preview, submit, verify, edit, and cancel orders |
-| [coinbase-mcp-convert](../coinbase-mcp-convert/SKILL.md) | Quote, approve, and execute currency conversions |
-| [coinbase-mcp-equities](../coinbase-mcp-equities/SKILL.md) | Eligible stocks, sessions, and whole-share constraints |
-| [coinbase-mcp-futures](../coinbase-mcp-futures/SKILL.md) | Eligible CFM dated futures and margin risk |
-| [coinbase-mcp-x402](../coinbase-mcp-x402/SKILL.md) | Discover and pay for curated research within an approved budget |
+| [Market data](references/market-data.md) | Products, prices, books, candles, and fees |
+| [Portfolios](references/portfolios.md) | Balances, portfolio management, and internal transfers |
+| [Trading](references/trading.md) | Preview, submit, verify, edit, and cancel orders |
+| [Conversions](references/convert.md) | Quote, approve, and execute currency conversions |
+| [Equities](references/equities.md) | Eligible stocks, sessions, and whole-share constraints; also read Trading |
+| [Futures](references/futures.md) | Eligible CFM dated futures and margin risk; also read Trading |
+| [x402 research](references/x402.md) | Discover and pay for curated research within an approved budget |
 
 ## Monitoring limits
 
 Hosted Coinbase MCP has no streaming watch subscription. Do not invent tools, pass CLI `--watch` or `--until` flags as tool arguments, use tight polling loops, or claim monitoring continues after the conversation ends.
 
-Offer a one-time supported [market-data read](../coinbase-mcp-market-data/SKILL.md), or explain that a supported server-side limit/stop may meet the intent and obtain separate [trading approval](../coinbase-mcp-trading/SKILL.md). Neither is automatically authorized by a watch request. CLI monitoring requires the user's separate product choice, installation/credentials, permissions, and agreement to session-lived behavior; return to the shared Coinbase router before switching. Never switch as recovery for an uncertain order or payment.
+Offer a one-time supported [market-data read](references/market-data.md), or explain that a supported server-side limit/stop may meet the intent and obtain separate [trading approval](references/trading.md). Neither is automatically authorized by a watch request. CLI monitoring requires the user's separate product choice, installation/credentials, permissions, and agreement to session-lived behavior; return to the shared Coinbase router before switching. Never switch as recovery for an uncertain order or payment.
 
 ## Disconnect
 

@@ -98,6 +98,31 @@ class ProductSkillsTests(unittest.TestCase):
         )
         builder.validate_links(self.target.parent)
 
+    def test_capability_references_keep_local_links_and_rebase_router_links(self):
+        skill = self.add_skill("coinbase-cli", "cli-example")
+        entry = skill / "SKILL.md"
+        entry.write_text(entry.read_text() + "\n[Trading](references/trading.md)\n")
+        references = skill / "references"
+        references.mkdir()
+        trading = references / "trading.md"
+        original = (
+            "# Trading\n\n[Setup](../SKILL.md)\n[Equities](equities.md)\n"
+            "[Router](../../../coinbase/SKILL.md)\n"
+        )
+        trading.write_text(original)
+        (references / "equities.md").write_text("# Equities\n\n[Trading](trading.md)\n")
+        builder.copy_skills(self.target, ("coinbase-cli",))
+        self.assertEqual(trading.read_text(), original)
+        self.assertEqual(
+            (self.target / "cli-example/SKILL.md").read_text(), entry.read_text()
+        )
+        self.assertEqual(
+            (self.target / "cli-example/references/trading.md").read_text(),
+            original.replace("../../../coinbase/SKILL.md", "../../coinbase/SKILL.md"),
+        )
+        builder.validate_skills(self.target.parent)
+        builder.validate_links(self.target.parent)
+
     def test_links_to_unselected_products_fail(self):
         self.add_skill("coinbase-cli", "cli-example")
         self.add_skill("wallet-mcp", "wallet-example")

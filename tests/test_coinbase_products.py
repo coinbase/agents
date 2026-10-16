@@ -17,38 +17,51 @@ CAPABILITIES = {
 
 class CoinbaseProductsTests(unittest.TestCase):
     def skill_text(self, product, capability=None):
-        name = f"{product}-{capability}" if capability else product
-        return (SKILLS / product / name / "SKILL.md").read_text()
+        directory = SKILLS / product / product
+        document = f"references/{capability}.md" if capability else "SKILL.md"
+        return (directory / document).read_text()
 
-    def test_products_have_self_contained_skills_without_interface_references(self):
+    def test_each_product_has_one_skill_with_linked_capability_references(self):
         self.assertFalse((SKILLS / "coinbase-for-agents").exists())
         for product in PRODUCTS:
             capabilities = CAPABILITIES | (
                 {"watch"} if product == "coinbase-cli" else set()
             )
-            expected = {product} | {f"{product}-{name}" for name in capabilities}
+            directory = SKILLS / product / product
+            self.assertEqual(list((SKILLS / product).iterdir()), [directory])
             self.assertEqual(
-                {path.name for path in (SKILLS / product).iterdir()}, expected
+                {path.name for path in directory.iterdir()},
+                {"SKILL.md", "references"},
             )
-            for name in expected:
-                with self.subTest(skill=name):
-                    directory = SKILLS / product / name
-                    self.assertEqual(
-                        {path.name for path in directory.iterdir()}, {"SKILL.md"}
+            entry = self.skill_text(product)
+            self.assertIn(f"name: {product}\n", entry)
+            self.assertIn(
+                "Read the applicable guide before planning or executing", entry
+            )
+            self.assertEqual(
+                {path.name for path in (directory / "references").iterdir()},
+                {f"{name}.md" for name in capabilities},
+            )
+            for capability in capabilities:
+                with self.subTest(product=product, capability=capability):
+                    text = self.skill_text(product, capability)
+                    self.assertFalse(text.startswith("---\n"))
+                    self.assertIn(f"](references/{capability}.md)", entry)
+                    self.assertIn("](../SKILL.md)", text)
+                    self.assertNotRegex(text, r"\]\(\.\./coinbase-(cli|mcp)")
+                    self.assertIn(
+                        f"## {product.removeprefix('coinbase-').upper()} execution",
+                        text,
                     )
-                    text = (directory / "SKILL.md").read_text()
-                    self.assertIn(f"name: {name}\n", text)
-                    self.assertNotIn("references/", text)
-                    other = (
-                        "coinbase-mcp" if product == "coinbase-cli" else "coinbase-cli"
-                    )
-                    self.assertNotIn(f"](../{other}", text)
-                    if name != product:
-                        self.assertIn(f"](../{product}/SKILL.md)", text)
-                        self.assertIn(
-                            f"## {product.removeprefix('coinbase-').upper()} execution",
-                            text,
-                        )
+                    if capability in {"equities", "futures"}:
+                        self.assertIn("](trading.md)", text)
+        self.assertEqual(
+            {path.relative_to(SKILLS) for path in SKILLS.rglob("SKILL.md")},
+            {
+                Path("coinbase/SKILL.md"),
+                *(Path(product) / product / "SKILL.md" for product in PRODUCTS),
+            },
+        )
 
     def test_product_setup_keeps_authentication_and_execution_separate(self):
         cli = self.skill_text("coinbase-cli")
@@ -73,7 +86,7 @@ class CoinbaseProductsTests(unittest.TestCase):
             "https://accounts.coinbase.com/security/connections",
         ):
             self.assertIn(marker, mcp)
-        for path in (SKILLS / "coinbase-mcp").rglob("SKILL.md"):
+        for path in (SKILLS / "coinbase-mcp").rglob("*.md"):
             self.assertNotIn("```sh", path.read_text())
             self.assertNotIn("npm install", path.read_text())
 

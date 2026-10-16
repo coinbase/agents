@@ -1,11 +1,6 @@
----
-name: coinbase-cli-portfolios
-description: Read Coinbase balances and positions, list or manage portfolios, and transfer funds between portfolios through Coinbase CLI. Use for portfolio selection, account scope, portfolio creation/renaming/deletion, and internal transfers.
----
-
 # Coinbase CLI: portfolios
 
-First follow [Coinbase CLI setup and safety](../coinbase-cli/SKILL.md). Use only Coinbase CLI for this workflow; do not switch products or credentials to retry an uncertain financial write.
+First follow [Coinbase CLI setup and safety](../SKILL.md). Use only Coinbase CLI for this workflow; do not switch products or credentials to retry an uncertain financial write.
 
 ## Read and select
 

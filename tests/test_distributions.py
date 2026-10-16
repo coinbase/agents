@@ -124,7 +124,7 @@ class DistributionTests(unittest.TestCase):
         for product in ("coinbase-cli", "coinbase-mcp"):
             entry = ROOT / "skills" / product / product / "SKILL.md"
             self.assertIn(f"name: {product}\n", entry.read_text())
-            self.assertIn(f"{product}-trading/SKILL.md", entry.read_text())
+            self.assertIn("](references/trading.md)", entry.read_text())
         builder.validate_links(ROOT)
 
     def test_chatgpt_uses_channel_mcp_endpoint(self):
@@ -180,14 +180,19 @@ class DistributionTests(unittest.TestCase):
                 }
                 self.assertEqual(actual, expected)
                 self.assertTrue((package / "skills/coinbase/SKILL.md").is_file())
-                self.assertEqual(len(actual), 18)
+                self.assertEqual(
+                    {path.parts[0] for path in actual if path.name == "SKILL.md"},
+                    {"coinbase", "coinbase-cli", "coinbase-mcp"},
+                )
+                references = {path for path in actual if "references" in path.parts}
+                self.assertEqual(len(references), 15)
                 router = (package / "skills/coinbase/SKILL.md").read_text()
                 for product in ("coinbase-cli", "coinbase-mcp"):
                     self.assertTrue(
                         (package / "skills" / product / "SKILL.md").is_file()
                     )
                     self.assertIn(f"](../{product}/SKILL.md)", router)
-                self.assertTrue(all(path.name == "SKILL.md" for path in actual))
+                self.assertTrue(all(path.suffix == ".md" for path in actual))
 
     def test_chatgpt_icon_preserves_artwork_at_larger_dimensions(self):
         source = ET.parse(ROOT / "assets/coinbase.svg").getroot()

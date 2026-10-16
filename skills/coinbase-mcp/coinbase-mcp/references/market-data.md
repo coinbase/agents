@@ -1,18 +1,13 @@
----
-name: coinbase-mcp-market-data
-description: Read Coinbase products, prices, recent trades, order books, best bid/ask, candles, and fees through Coinbase MCP. Use for price lookups, charts, spreads, and product discovery. Read-only; data availability varies by asset class.
----
-
 # Coinbase MCP: market data
 
-First follow [Coinbase MCP setup and safety](../coinbase-mcp/SKILL.md). Use only Coinbase MCP for this workflow; do not switch products or credentials to retry an uncertain financial write.
+First follow [Coinbase MCP setup and safety](../SKILL.md). Use only Coinbase MCP for this workflow; do not switch products or credentials to retry an uncertain financial write.
 
 1. Identify the requested product, quote currency, metric, and time range. Discover exact product IDs and eligibility; do not substitute a different pair or an expired futures contract.
 2. Use the Coinbase MCP's supported product/data operation. Filter and paginate deliberately rather than assuming the first page is complete.
 3. Preserve units and precision. Report source timestamps, missing/stale values, time zones, and whether a price is a reference, last trade, bid, or ask. None guarantees execution at that price.
 4. Equity product lookup does not imply ticker, order-book, bid/ask, candle, or preview support. Check the current surface; do not assume CLI/MCP parity for equity candles. If a usable quote is unavailable, explain the limitation rather than substituting crypto data or automatically purchasing research.
 
-A price lookup authorizes no trade, payment, or monitoring process. For an order, load [trading](../coinbase-mcp-trading/SKILL.md) and the applicable asset-class skill. Hosted Coinbase MCP has no streaming workflow. Offer a one-time read or separately authorized server-side order instead; do not invent subscriptions or replace streaming with tight polling.
+A price lookup authorizes no trade, payment, or monitoring process. For an order, load [trading](trading.md) and the applicable asset-class skill. Hosted Coinbase MCP has no streaming workflow. Offer a one-time read or separately authorized server-side order instead; do not invent subscriptions or replace streaming with tight polling.
 
 ## MCP execution
 

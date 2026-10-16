@@ -1,11 +1,6 @@
----
-name: coinbase-mcp-portfolios
-description: Read Coinbase balances and positions, list or manage portfolios, and transfer funds between portfolios through Coinbase MCP. Use for portfolio selection, account scope, portfolio creation/renaming/deletion, and internal transfers.
----
-
 # Coinbase MCP: portfolios
 
-First follow [Coinbase MCP setup and safety](../coinbase-mcp/SKILL.md). Use only Coinbase MCP for this workflow; do not switch products or credentials to retry an uncertain financial write.
+First follow [Coinbase MCP setup and safety](../SKILL.md). Use only Coinbase MCP for this workflow; do not switch products or credentials to retry an uncertain financial write.
 
 ## Read and select
 

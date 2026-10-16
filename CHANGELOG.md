@@ -2,7 +2,7 @@
 
 ## 0.0.1 — Unreleased
 
-- Keep `skills/coinbase/` as a product-neutral router and split workflows into `skills/coinbase-cli/<skill>/` and `skills/coinbase-mcp/<skill>/`. Inline execution guidance and remove interface reference files. Make the README product-focused. Package the router and selected products in a flat layout with rebased links; preserve plugin names and invocation commands. Capability skill names now use product prefixes, so replace older combined skill installs rather than keeping both.
+- Keep `skills/coinbase/` as a product-neutral router and consolidate each product into one skill at `skills/coinbase-cli/coinbase-cli/` or `skills/coinbase-mcp/coinbase-mcp/`. Move capability workflows and product-specific execution guidance into each skill's linked `references/` directory. Make the README product-focused. Package the three skills and their references in a flat layout with rebased links; preserve plugin names and invocation commands. Replace older combined-product, unqualified capability, and product-prefixed capability skill installs rather than keeping stale copies.
 
 - Route the ChatGPT distribution to `/mcp/chatgpt`; keep portable, Claude, and Codex on `/mcp` and validate each distribution's endpoint.
 - Add a separate ChatGPT directory distribution with submission listing URLs, a shorter subtitle, and 64×64 SVG dimensions; preserve the existing portable, Claude, and Codex packages.

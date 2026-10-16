@@ -1,15 +1,10 @@
----
-name: coinbase-cli-watch
-description: Plan bounded Coinbase CLI streaming or conditional monitoring, such as notifying when a price crosses a threshold or an order fills. Requires supervised shell execution and separate authorization for triggered financial actions.
----
-
 # Coinbase CLI: conditional monitoring
 
-First follow [Coinbase CLI setup and safety](../coinbase-cli/SKILL.md). Use only Coinbase CLI for this workflow; do not switch products or credentials to retry an uncertain financial write.
+First follow [Coinbase CLI setup and safety](../SKILL.md). Use only Coinbase CLI for this workflow; do not switch products or credentials to retry an uncertain financial write.
 
 ## Agree on the monitoring plan
 
-1. Prefer a supported server-side order for a simple resting limit or stop. Monitoring is session-lived, not a durable exchange order, and stops do not guarantee fills or cap losses. Use [trading](../coinbase-cli-trading/SKILL.md) for an approved order.
+1. Prefer a supported server-side order for a simple resting limit or stop. Monitoring is session-lived, not a durable exchange order, and stops do not guarantee fills or cap losses. Use [trading](trading.md) for an approved order.
 2. For cross-product, spread/volume, or specific order-state monitoring, identify the exact products/order IDs, predicate, source data, timeout, and notification/action. Resolve relative thresholds from current data and confirm the absolute values.
 3. Confirm whether the request is notification-only or includes an explicit conditional financial plan. A request to watch prices is not trading permission. Before arming any financial action, approve product, side, amount, currency, portfolio, price/slippage constraints, expiry, and failure behavior under the shared trading rules.
 4. Require a supported monitored process, bounded lifetime, and a way to stop it. If the harness cannot supervise the process, explain that limitation; do not claim persistent monitoring or create a background daemon.

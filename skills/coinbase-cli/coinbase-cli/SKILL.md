@@ -69,7 +69,7 @@ For `@file.json`, parse/read the file locally and check its complete object agai
 - Check the selected environment's actual portfolio access with authorized reads. Use `-e` consistently when multiple environments exist. Switching environment is a credential change, not a harmless formatting choice.
 - Discover real portfolio UUIDs. Set `portfolio_id` when the current command supports it; never assume key scope eliminates the need to select the intended portfolio or that the default portfolio is authorized.
 - Keep financial approval prompts enabled; do not configure a blanket `coinbase *` permission bypass. A read-only request does not authorize writes.
-- JSON normally goes to stdout; inspect both exit status and the response's actual success/error fields. A zero exit or returned order ID does not prove a fill. Streaming timeout/failure exits differ; consult the [monitoring skill](../coinbase-cli-watch/SKILL.md).
+- JSON normally goes to stdout; inspect both exit status and the response's actual success/error fields. A zero exit or returned order ID does not prove a fill. Streaming timeout/failure exits differ; consult the [monitoring guide](references/watch.md).
 - For authentication or scope errors, check the selected API key through the supported CDP flow. Do not reveal keys or silently switch to OAuth/another environment.
 - Before a write, disable request-history seeding, inspect all actual inputs locally, and follow the capability's preview/approval rules. A dry run is supplementary, not validation. Retain supported idempotency identifiers before submission. Unknown outcomes require state checks, not a fresh command with a fresh ID or an error-suggested transport switch.
 
@@ -77,16 +77,18 @@ The CLI's local stdio server (`coinbase mcp`) is a separate optional integration
 
 ## Choose a capability
 
-| Skill | Workflow |
+Read the applicable guide before planning or executing a workflow; setup alone does not include its command contract or capability-specific safeguards.
+
+| Guide | Workflow |
 | --- | --- |
-| [coinbase-cli-market-data](../coinbase-cli-market-data/SKILL.md) | Products, prices, books, candles, and fees |
-| [coinbase-cli-portfolios](../coinbase-cli-portfolios/SKILL.md) | Balances, portfolio management, and internal transfers |
-| [coinbase-cli-trading](../coinbase-cli-trading/SKILL.md) | Preview, submit, verify, edit, and cancel orders |
-| [coinbase-cli-convert](../coinbase-cli-convert/SKILL.md) | Quote, approve, and execute currency conversions |
-| [coinbase-cli-equities](../coinbase-cli-equities/SKILL.md) | Eligible stocks, sessions, and whole-share constraints |
-| [coinbase-cli-futures](../coinbase-cli-futures/SKILL.md) | Eligible CFM dated futures and margin risk |
-| [coinbase-cli-x402](../coinbase-cli-x402/SKILL.md) | Discover and pay for curated research within an approved budget |
-| [coinbase-cli-watch](../coinbase-cli-watch/SKILL.md) | Bounded streaming and conditional monitoring |
+| [Market data](references/market-data.md) | Products, prices, books, candles, and fees |
+| [Portfolios](references/portfolios.md) | Balances, portfolio management, and internal transfers |
+| [Trading](references/trading.md) | Preview, submit, verify, edit, and cancel orders |
+| [Conversions](references/convert.md) | Quote, approve, and execute currency conversions |
+| [Equities](references/equities.md) | Eligible stocks, sessions, and whole-share constraints; also read Trading |
+| [Futures](references/futures.md) | Eligible CFM dated futures and margin risk; also read Trading |
+| [x402 research](references/x402.md) | Discover and pay for curated research within an approved budget |
+| [Monitoring](references/watch.md) | Bounded streaming and conditional monitoring |
 
 ## Disconnect
 

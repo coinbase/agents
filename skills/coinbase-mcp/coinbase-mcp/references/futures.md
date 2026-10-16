@@ -1,11 +1,6 @@
----
-name: coinbase-mcp-futures
-description: Plan, preview, and manage eligible CFM dated futures orders through Coinbase MCP. Use for current contract discovery, contract sizing, default portfolio requirements, margin, liquidation risk, and futures order outcomes.
----
-
 # Coinbase MCP: dated futures
 
-First follow [Coinbase MCP setup and safety](../coinbase-mcp/SKILL.md). Use only Coinbase MCP for this workflow; do not switch products or credentials to retry an uncertain financial write. Follow the [Coinbase MCP trading workflow](../coinbase-mcp-trading/SKILL.md) before planning these orders.
+First follow [Coinbase MCP setup and safety](../SKILL.md). Use only Coinbase MCP for this workflow; do not switch products or credentials to retry an uncertain financial write. Follow the [Coinbase MCP trading workflow](trading.md) before planning these orders.
 
 1. Verify account eligibility and discover the current CFM contract. Dated product IDs roll; do not reuse an expired example or assume a spot ticker identifies a futures contract.
 2. Futures require the eligible default portfolio. Discover its actual UUID and confirm access; never derive it from a user UUID or assume an isolated spot portfolio is eligible.

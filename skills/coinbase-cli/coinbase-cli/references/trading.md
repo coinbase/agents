@@ -1,17 +1,12 @@
----
-name: coinbase-cli-trading
-description: Preview, place, verify, edit, cancel, or close Coinbase orders through Coinbase CLI. Use for crypto buy/sell requests, limits, stops, advanced orders, and order management; load the equity or futures companion for those products. These are real financial actions.
----
-
 # Coinbase CLI: trading
 
-First follow [Coinbase CLI setup and safety](../coinbase-cli/SKILL.md). Use only Coinbase CLI for this workflow; do not switch products or credentials to retry an uncertain financial write.
+First follow [Coinbase CLI setup and safety](../SKILL.md). Use only Coinbase CLI for this workflow; do not switch products or credentials to retry an uncertain financial write.
 
 ## Plan, preview, authorize, submit, verify
 
 1. Discover the exact product, intended portfolio, available funds/positions, current size/price limits, and supported order fields. Honor the requested quote currency; never substitute BTC-USD for BTC-USDC. Ask if the currency or portfolio is ambiguous.
 2. Establish product, side, size and units, portfolio, order type, price/trigger, time in force, expiry, and applicable session. Resolve relative prices from current data and confirm the absolute value.
-3. Preview supported orders and disclose estimated fees, price/slippage, and relevant risk. Preview is not authorization. If a required preview is unavailable, stop; never create an order to test it. Load [equities](../coinbase-cli-equities/SKILL.md) or [futures](../coinbase-cli-futures/SKILL.md) before planning those products.
+3. Preview supported orders and disclose estimated fees, price/slippage, and relevant risk. Preview is not authorization. If a required preview is unavailable, stop; never create an order to test it. Load [equities](equities.md) or [futures](futures.md) before planning those products.
 4. Obtain approval for the complete order. Generate and retain a unique `client_order_id` before submission; never reuse it for a different logical order. Keep it available if the response is lost.
 5. Submit once using the Coinbase CLI and current schema. For spot market buys use `quote_size`; for spot market sells use `base_size`, not both. Other order types and asset classes have their own sizing rules; preserve decimal precision.
 6. Inspect order state and fills. Acceptance/order ID is not a fill. Report open, filled, partially filled, rejected/failed, or canceled only as established by the response. Do not claim a future fill for a resting order or poll indefinitely.
