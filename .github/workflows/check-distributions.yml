@@ -21,15 +21,18 @@ jobs:
         run: |
           uvx --from 'check-jsonschema==0.34.1' check-jsonschema \
             --schemafile schemas/1.0.0/plugin.schema.json \
-            src/plugins/portable/plugin.json
+            src/plugins/portable/plugin.json src/plugins/chatgpt/plugin.json
           uvx --from 'check-jsonschema==0.34.1' check-jsonschema \
             --schemafile schemas/1.0.0/mcp.schema.json \
             src/plugins/portable/mcp.json
 
       - name: Check distribution builder
         run: |
-          uvx ruff@0.13.2 check scripts/build-distributions.py
-          uvx ruff@0.13.2 format --check scripts/build-distributions.py
+          uvx ruff@0.13.2 check scripts/build-distributions.py tests
+          uvx ruff@0.13.2 format --check scripts/build-distributions.py tests
+
+      - name: Test plugin distributions
+        run: python3 -m unittest discover -s tests
 
       - name: Build plugin distributions
         run: python3 scripts/build-distributions.py dist

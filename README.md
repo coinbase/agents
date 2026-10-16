@@ -30,15 +30,22 @@ For agents with shell access, the optional [`@coinbase/coinbase-cli`](https://ww
 
 ## Plugin distributions
 
-This repository is the canonical source for three generated distributions:
+This repository is the canonical source for four generated distributions:
 
 - `coinbase-agent-plugin-vX.Y.Z`: portable [Agent Plugins v1.0.0](https://agent-plugins.org/) package for Cursor, Hermes, and other compatible clients.
 - `coinbase-claude-vX.Y.Z`: Claude Code native package.
 - `coinbase-codex-vX.Y.Z`: Codex marketplace containing the portable package.
+- `coinbase-chatgpt-vX.Y.Z`: dedicated OpenAI public-directory submission package with ChatGPT listing metadata and a 64×64 SVG icon.
 
 Download versioned ZIP or tar archives from [Coinbase Agent Plugin downloads](https://coinbase.github.io/agents/), verify them against `SHA256SUMS`, and extract the package for your client. Plugin-format support does not imply Coinbase OAuth client approval; do not bypass rejected authentication.
 
 For local development, run `python3 scripts/build-distributions.py dist` and use the generated directories under `dist/site/packages/`. The repository root is not an installable plugin.
+
+### ChatGPT directory submission
+
+Use `coinbase-chatgpt-vX.Y.Z.zip` for the [OpenAI submission flow](https://developers.openai.com/plugins/deploy/submission). Its manifest lives under `src/plugins/chatgpt/`; it reuses the canonical skills, remote MCP configuration, and icon artwork without changing the portable, Claude Code, or Codex distributions. The package does not install a CLI or give ChatGPT local shell access.
+
+This package is not a published or approved listing. Publisher/domain verification, approved OAuth access, scans, reviewer access, test cases, and a demo recording must be completed separately. OpenAI's directory covers ChatGPT and Codex; its [plugin guidelines](https://developers.openai.com/plugins/plugin-guidelines) prohibit execution of money/crypto transfers and investment trades, and currently restrict commerce to physical goods. The shared skills still describe trading, transfers, and paid research; resolve those capability and policy conflicts before submission. A separate manifest does not restrict the tools exposed by the MCP server.
 
 ### Install locally
 

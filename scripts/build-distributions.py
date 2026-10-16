@@ -9,6 +9,8 @@ import re
 import shutil
 import stat
 import tarfile
+import urllib.parse
+import xml.etree.ElementTree as ET
 import zipfile
 from pathlib import Path
 
@@ -77,15 +79,27 @@ def copy_common(target: Path) -> None:
     copy_file(ROOT / "src/plugins/README.md", target / "README.md")
 
 
-def build_portable(target: Path) -> None:
+def build_portable(target: Path, manifest_dir: str = "portable") -> None:
     target.mkdir(parents=True)
-    copy_file(ROOT / "src/plugins/portable/plugin.json", target / "plugin.json")
+    copy_file(ROOT / f"src/plugins/{manifest_dir}/plugin.json", target / "plugin.json")
     copy_file(ROOT / "src/plugins/portable/mcp.json", target / "mcp.json")
     copy_tree(ROOT / "skills", target / "skills")
     asset_dir = target / "com.openai/assets"
     asset_dir.mkdir(parents=True)
     copy_file(ROOT / "assets/coinbase.svg", asset_dir / "coinbase.svg")
     copy_common(target)
+
+
+def build_chatgpt(target: Path) -> None:
+    build_portable(target, "chatgpt")
+    icon_path = target / "com.openai/assets/coinbase.svg"
+    ET.register_namespace("", "http://www.w3.org/2000/svg")
+    icon = ET.parse(
+        icon_path, parser=ET.XMLParser(target=ET.TreeBuilder(insert_comments=True))
+    )
+    icon.getroot().set("width", "64")
+    icon.getroot().set("height", "64")
+    icon.write(icon_path, encoding="unicode")
 
 
 def build_claude(target: Path) -> None:
@@ -196,6 +210,28 @@ def validate_portable(root: Path, version: str) -> None:
             raise ValueError(f"invalid OpenAI {field} path")
     validate_skills(root)
     validate_links(root)
+
+
+def validate_chatgpt(root: Path, version: str) -> None:
+    validate_portable(root, version)
+    interface = load_json(root / "plugin.json")["extensions"]["com.openai"]["interface"]
+    if not 1 <= len(interface.get("shortDescription", "")) <= 30:
+        raise ValueError("ChatGPT shortDescription must be 1–30 characters")
+    for field in ("websiteURL", "supportURL", "privacyPolicyURL", "termsOfServiceURL"):
+        value = interface.get(field, "")
+        url = urllib.parse.urlsplit(value)
+        if (
+            not 1 <= len(value) <= 1024
+            or url.scheme != "https"
+            or not url.hostname
+            or url.username is not None
+            or url.password is not None
+        ):
+            raise ValueError(f"invalid ChatGPT {field}")
+    for field in ("logo", "composerIcon"):
+        icon = ET.parse(root / interface[field]).getroot()
+        if icon.get("width") != "64" or icon.get("height") != "64":
+            raise ValueError(f"ChatGPT {field} must declare 64×64 dimensions")
 
 
 def validate_claude(root: Path, version: str) -> None:
@@ -328,15 +364,18 @@ def main() -> None:
     portable = packages / f"coinbase-agent-plugin-v{version}"
     claude_target = packages / f"coinbase-claude-v{version}"
     codex_target = packages / f"coinbase-codex-v{version}"
+    chatgpt_target = packages / f"coinbase-chatgpt-v{version}"
     build_portable(portable)
     build_claude(claude_target)
     build_codex(codex_target, portable)
+    build_chatgpt(chatgpt_target)
     validate_portable(portable, version)
     validate_claude(claude_target, version)
     validate_codex(codex_target, version)
+    validate_chatgpt(chatgpt_target, version)
 
     archives = []
-    for package in (portable, claude_target, codex_target):
+    for package in (portable, claude_target, codex_target, chatgpt_target):
         archives.extend(archive(package, downloads))
     checksums = [
         f"{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.name}"
