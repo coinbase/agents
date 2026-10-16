@@ -95,22 +95,15 @@ class DistributionTests(unittest.TestCase):
     def expected_packaged_skills(self):
         skills = [
             ROOT / "skills/coinbase",
-            *sorted((ROOT / "skills/coinbase-cli").iterdir()),
-            *sorted((ROOT / "skills/coinbase-mcp").iterdir()),
+            ROOT / "skills/coinbase-cli",
+            ROOT / "skills/coinbase-mcp",
         ]
-        expected = {
+        return {
             Path(skill.name) / path.relative_to(skill): path.read_bytes()
             for skill in skills
             for path in skill.rglob("*")
             if path.is_file()
         }
-        router = Path("coinbase/SKILL.md")
-        for product in ("coinbase-cli", "coinbase-mcp"):
-            expected[router] = expected[router].replace(
-                f"../{product}/{product}/SKILL.md".encode(),
-                f"../{product}/SKILL.md".encode(),
-            )
-        return expected
 
     def test_source_router_and_readme_list_products_not_capability_skills(self):
         router = ROOT / "skills/coinbase/SKILL.md"
@@ -119,10 +112,11 @@ class DistributionTests(unittest.TestCase):
             text = document.read_text()
             self.assertIn("| Product |", text)
             for product in ("coinbase-cli", "coinbase-mcp"):
-                self.assertIn(f"{product}/{product}/SKILL.md", text)
+                self.assertIn(f"{product}/SKILL.md", text)
+                self.assertNotIn(f"{product}/{product}/", text)
                 self.assertNotIn(f"{product}-trading/SKILL.md", text)
         for product in ("coinbase-cli", "coinbase-mcp"):
-            entry = ROOT / "skills" / product / product / "SKILL.md"
+            entry = ROOT / "skills" / product / "SKILL.md"
             self.assertIn(f"name: {product}\n", entry.read_text())
             self.assertIn("](references/trading.md)", entry.read_text())
         builder.validate_links(ROOT)

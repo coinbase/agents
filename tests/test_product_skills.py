@@ -29,8 +29,8 @@ class ProductSkillsTests(unittest.TestCase):
         root_patch.start()
         self.addCleanup(root_patch.stop)
 
-    def add_skill(self, product, name):
-        skill = self.source / product / name
+    def add_skill(self, name):
+        skill = self.source / name
         skill.mkdir(parents=True)
         (skill / "SKILL.md").write_text(
             f"---\nname: {name}\ndescription: Test workflow.\n---\n"
@@ -38,40 +38,40 @@ class ProductSkillsTests(unittest.TestCase):
         return skill
 
     def test_default_selection_excludes_other_products(self):
-        skill = self.add_skill("coinbase-cli", "cli-example")
-        self.add_skill("coinbase-mcp", "mcp-example")
+        skill = self.add_skill("coinbase-cli")
+        self.add_skill("coinbase-mcp")
         for relative in ("references/cli.md", "plugins/example.md", "assets/data.json"):
             path = skill / relative
             path.parent.mkdir(parents=True)
             path.write_text(relative)
-        self.add_skill("wallet-mcp", "wallet-example")
+        self.add_skill("wallet-mcp")
         builder.copy_skills(self.target)
         self.assertEqual(
             {p.relative_to(self.target) for p in self.target.rglob("*") if p.is_file()},
             {
-                Path("cli-example") / p.relative_to(skill)
+                Path("coinbase-cli") / p.relative_to(skill)
                 for p in skill.rglob("*")
                 if p.is_file()
             }
-            | {Path("coinbase/SKILL.md"), Path("mcp-example/SKILL.md")},
+            | {Path("coinbase/SKILL.md"), Path("coinbase-mcp/SKILL.md")},
         )
         builder.validate_skills(self.target.parent)
 
     def test_can_select_multiple_products(self):
-        self.add_skill("coinbase-cli", "cli-example")
-        self.add_skill("wallet-mcp", "wallet-example")
+        self.add_skill("coinbase-cli")
+        self.add_skill("wallet-mcp")
         builder.copy_skills(self.target, ("coinbase-cli", "wallet-mcp"))
         self.assertEqual(
             {p.name for p in self.target.iterdir()},
-            {"coinbase", "cli-example", "wallet-example"},
+            {"coinbase", "coinbase-cli", "wallet-mcp"},
         )
         builder.validate_skills(self.target.parent)
 
-    def test_router_links_rebase_without_changing_source(self):
-        self.add_skill("coinbase-cli", "cli-example")
+    def test_router_links_preserved_without_changing_source(self):
+        self.add_skill("coinbase-cli")
         document = self.router / "SKILL.md"
         original = document.read_text() + (
-            "\n[Product](../coinbase-cli/cli-example/SKILL.md#setup)\n"
+            "\n[Product](../coinbase-cli/SKILL.md#setup)\n"
             "[Docs](https://example.com/guide#setup)\n"
         )
         document.write_text(original)
@@ -79,27 +79,24 @@ class ProductSkillsTests(unittest.TestCase):
         self.assertEqual(document.read_text(), original)
         self.assertEqual(
             (self.target / "coinbase/SKILL.md").read_text(),
-            original.replace(
-                "../coinbase-cli/cli-example/SKILL.md",
-                "../cli-example/SKILL.md",
-            ),
+            original,
         )
         builder.validate_links(self.target.parent)
 
     def test_product_can_link_back_to_shared_router(self):
-        skill = self.add_skill("coinbase-cli", "cli-example")
+        skill = self.add_skill("coinbase-cli")
         document = skill / "SKILL.md"
-        original = document.read_text() + "\n[Router](../../coinbase/SKILL.md)\n"
+        original = document.read_text() + "\n[Router](../coinbase/SKILL.md)\n"
         document.write_text(original)
         builder.copy_skills(self.target, ("coinbase-cli",))
         self.assertEqual(
-            (self.target / "cli-example/SKILL.md").read_text(),
-            original.replace("../../coinbase/SKILL.md", "../coinbase/SKILL.md"),
+            (self.target / "coinbase-cli/SKILL.md").read_text(),
+            original,
         )
         builder.validate_links(self.target.parent)
 
-    def test_capability_references_keep_local_links_and_rebase_router_links(self):
-        skill = self.add_skill("coinbase-cli", "cli-example")
+    def test_capability_references_and_router_links_are_copied_unchanged(self):
+        skill = self.add_skill("coinbase-cli")
         entry = skill / "SKILL.md"
         entry.write_text(entry.read_text() + "\n[Trading](references/trading.md)\n")
         references = skill / "references"
@@ -107,49 +104,47 @@ class ProductSkillsTests(unittest.TestCase):
         trading = references / "trading.md"
         original = (
             "# Trading\n\n[Setup](../SKILL.md)\n[Equities](equities.md)\n"
-            "[Router](../../../coinbase/SKILL.md)\n"
+            "[Router](../../coinbase/SKILL.md)\n"
         )
         trading.write_text(original)
         (references / "equities.md").write_text("# Equities\n\n[Trading](trading.md)\n")
         builder.copy_skills(self.target, ("coinbase-cli",))
         self.assertEqual(trading.read_text(), original)
         self.assertEqual(
-            (self.target / "cli-example/SKILL.md").read_text(), entry.read_text()
+            (self.target / "coinbase-cli/SKILL.md").read_text(), entry.read_text()
         )
         self.assertEqual(
-            (self.target / "cli-example/references/trading.md").read_text(),
-            original.replace("../../../coinbase/SKILL.md", "../../coinbase/SKILL.md"),
+            (self.target / "coinbase-cli/references/trading.md").read_text(),
+            original,
         )
         builder.validate_skills(self.target.parent)
         builder.validate_links(self.target.parent)
 
     def test_links_to_unselected_products_fail(self):
-        self.add_skill("coinbase-cli", "cli-example")
-        self.add_skill("wallet-mcp", "wallet-example")
+        self.add_skill("coinbase-cli")
+        self.add_skill("wallet-mcp")
         document = self.router / "SKILL.md"
         document.write_text(
-            document.read_text() + "\n[Wallet](../wallet-mcp/wallet-example/SKILL.md)\n"
+            document.read_text() + "\n[Wallet](../wallet-mcp/SKILL.md)\n"
         )
         with self.assertRaisesRegex(ValueError, "link outside selected skills"):
             builder.copy_skills(self.target, ("coinbase-cli",))
 
     def test_product_cannot_shadow_shared_router(self):
-        self.add_skill("coinbase-cli", "coinbase")
         with self.assertRaisesRegex(ValueError, "duplicate skill"):
-            builder.copy_skills(self.target, ("coinbase-cli",))
+            builder.copy_skills(self.target, ("coinbase",))
 
-    def test_duplicate_skill_names_fail_before_copying(self):
-        for product in ("coinbase-cli", "wallet-mcp"):
-            self.add_skill(product, "duplicate")
+    def test_duplicate_product_selection_fails_before_copying(self):
+        self.add_skill("coinbase-cli")
         with self.assertRaisesRegex(ValueError, "duplicate skill"):
-            builder.copy_skills(self.target, ("coinbase-cli", "wallet-mcp"))
+            builder.copy_skills(self.target, ("coinbase-cli", "coinbase-cli"))
         self.assertFalse(self.target.exists())
 
     def test_rejects_missing_or_empty_products(self):
-        with self.assertRaisesRegex(ValueError, "product directory"):
+        with self.assertRaisesRegex(ValueError, "product skill directory"):
             builder.copy_skills(self.target, ("coinbase-cli",))
         (self.source / "coinbase-cli").mkdir(parents=True)
-        with self.assertRaisesRegex(ValueError, "no skills"):
+        with self.assertRaisesRegex(ValueError, "product skill directory"):
             builder.copy_skills(self.target, ("coinbase-cli",))
 
     def test_rejects_empty_selection_and_unsafe_product_names(self):
@@ -157,24 +152,19 @@ class ProductSkillsTests(unittest.TestCase):
             with self.subTest(products=products), self.assertRaises(ValueError):
                 builder.copy_skills(self.target, products)
 
-    def test_rejects_non_skill_entries(self):
-        product = self.source / "coinbase-cli"
-        product.mkdir(parents=True)
-        for is_directory in (False, True):
-            path = product / "not-a-skill"
-            if is_directory:
-                path.mkdir()
-            else:
-                path.touch()
-            with self.subTest(is_directory=is_directory):
-                with self.assertRaisesRegex(ValueError, "invalid skill entry"):
-                    builder.copy_skills(self.target, ("coinbase-cli",))
-            if not is_directory:
-                path.unlink()
+    def test_rejects_nested_product_container_without_root_skill(self):
+        nested = self.source / "coinbase-cli/coinbase-cli"
+        nested.mkdir(parents=True)
+        (nested / "SKILL.md").write_text(
+            "---\nname: coinbase-cli\ndescription: Test workflow.\n---\n"
+        )
+        with self.assertRaisesRegex(ValueError, "product skill directory"):
+            builder.copy_skills(self.target, ("coinbase-cli",))
+        self.assertFalse(self.target.exists())
 
     def test_rejects_symlinks_at_each_source_level(self):
-        skill = self.add_skill("coinbase-cli", "cli-example")
-        for path in (skill / "reference.md", skill, skill.parent, self.source):
+        skill = self.add_skill("coinbase-cli")
+        for path in (skill / "reference.md", skill, self.router, self.source):
             with self.subTest(path=path):
                 original = self.root / "saved-source"
                 if path.exists():

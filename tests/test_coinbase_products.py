@@ -17,7 +17,7 @@ CAPABILITIES = {
 
 class CoinbaseProductsTests(unittest.TestCase):
     def skill_text(self, product, capability=None):
-        directory = SKILLS / product / product
+        directory = SKILLS / product
         document = f"references/{capability}.md" if capability else "SKILL.md"
         return (directory / document).read_text()
 
@@ -27,8 +27,7 @@ class CoinbaseProductsTests(unittest.TestCase):
             capabilities = CAPABILITIES | (
                 {"watch"} if product == "coinbase-cli" else set()
             )
-            directory = SKILLS / product / product
-            self.assertEqual(list((SKILLS / product).iterdir()), [directory])
+            directory = SKILLS / product
             self.assertEqual(
                 {path.name for path in directory.iterdir()},
                 {"SKILL.md", "references"},
@@ -59,7 +58,7 @@ class CoinbaseProductsTests(unittest.TestCase):
             {path.relative_to(SKILLS) for path in SKILLS.rglob("SKILL.md")},
             {
                 Path("coinbase/SKILL.md"),
-                *(Path(product) / product / "SKILL.md" for product in PRODUCTS),
+                *(Path(product) / "SKILL.md" for product in PRODUCTS),
             },
         )
 

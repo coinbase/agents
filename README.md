@@ -8,10 +8,10 @@ Skills and plugins for using Coinbase products with AI agents. Start with the [`
 
 | Product | Purpose | Entry skill |
 | --- | --- | --- |
-| Coinbase CLI | Local command-line workflows with CDP API-key credentials and approved shell access, including monitoring | [coinbase-cli](skills/coinbase-cli/coinbase-cli/SKILL.md) |
-| Coinbase MCP | Hosted tools through native OAuth, without CLI installation or shell access | [coinbase-mcp](skills/coinbase-mcp/coinbase-mcp/SKILL.md) |
+| Coinbase CLI | Local command-line workflows with CDP API-key credentials and approved shell access, including monitoring | [coinbase-cli](skills/coinbase-cli/SKILL.md) |
+| Coinbase MCP | Hosted tools through native OAuth, without CLI installation or shell access | [coinbase-mcp](skills/coinbase-mcp/SKILL.md) |
 
-The shared router stays at `skills/coinbase/`. Each product container has one skill at `skills/<product>/<product>/SKILL.md`, with capability guides under its `references/` directory. Add a product entry here and in the router when introducing a new product; keep individual capability lists inside that product.
+The shared router stays at `skills/coinbase/`. Each product has one skill at `skills/<product>/SKILL.md`, with capability guides under `skills/<product>/references/`. Add a product entry here and in the router when introducing a new product; keep individual capability lists inside that product.
 
 ## Plugin distributions
 
@@ -26,7 +26,7 @@ Download versioned ZIP or tar archives from [Coinbase Agent Plugin downloads](ht
 
 For local development, run `python3 scripts/build-distributions.py dist` and use the generated directories under `dist/site/packages/`. The repository root is not an installable plugin.
 
-The existing distributions include three skills: the shared `coinbase` router, `coinbase-cli`, and `coinbase-mcp`. The builder flattens the selected skills into the package's `skills/` directory, preserves their `references/` directories, and updates local Markdown links to match. Plugin names, `/coinbase:coinbase`, and installation paths are unchanged. Adding another product directory does not automatically ship it or configure its MCP server.
+The existing distributions include three skills: the shared `coinbase` router, `coinbase-cli`, and `coinbase-mcp`. The builder copies the selected skill directories, including their `references/`, unchanged into the package's `skills/` directory and rejects links to unselected skills. Source and installed skill layouts match. Plugin names, `/coinbase:coinbase`, and installation paths are unchanged. Adding another product directory does not automatically ship it or configure its MCP server.
 
 ### ChatGPT directory submission
 
@@ -73,7 +73,7 @@ hermes plugins enable coinbase
 
 Use the plugin key returned by `list` if different. Follow [Hermes's portable-plugin documentation](https://hermes-agent.nousresearch.com/docs/developer-guide/plugins/#portable-agent-plugins-v1-packages) and native OAuth setup. Reuse existing connections rather than adding duplicates.
 
-For standalone skills, build or download a generated package and install its complete `skills/` directory using your harness's supported method. Keep each product skill's `references/` directory intact; those guides contain the capability workflows and execution contracts. The package includes the shared router, selected product skills, and links adjusted for the flat installed layout. Do not flatten source directories by hand or assume every harness discovers nested skills. The router remains at `skills/coinbase/` in source; product skills live at `skills/<product>/<product>/`. Replace old combined-product, unqualified capability, or product-prefixed capability skill installs through your harness's supported update/removal flow rather than leaving stale skills alongside `coinbase`, `coinbase-cli`, and `coinbase-mcp`. Preserve unrelated installations and settings.
+For standalone skills, build or download a generated package and install its complete `skills/` directory using your harness's supported method. Keep each product skill's `references/` directory intact; those guides contain the capability workflows and execution contracts. Source and generated packages both use `skills/coinbase/`, `skills/coinbase-cli/`, and `skills/coinbase-mcp/`, with one `SKILL.md` per directory. Replace old combined-product, unqualified capability, or product-prefixed capability skill installs through your harness's supported update/removal flow rather than leaving stale skills alongside `coinbase`, `coinbase-cli`, and `coinbase-mcp`. Preserve unrelated installations and settings.
 
 ## Safety and support
 

@@ -5,7 +5,6 @@ import gzip
 import hashlib
 import html
 import json
-import os
 import re
 import shutil
 import stat
@@ -92,54 +91,35 @@ def copy_skills(
     for product in products:
         if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", product):
             raise ValueError(f"invalid skill product: {product}")
+        if product in selected:
+            raise ValueError(f"duplicate skill selection: {product}")
         source = source_root / product
-        if source.is_symlink() or not source.is_dir():
-            raise ValueError(f"invalid skill product directory: {source}")
-        entries = sorted(source.iterdir())
-        if not entries:
-            raise ValueError(f"no skills in product: {source}")
-        for skill in entries:
-            if (
-                skill.is_symlink()
-                or not skill.is_dir()
-                or not (skill / "SKILL.md").is_file()
-            ):
-                raise ValueError(f"invalid skill entry: {skill}")
-            if skill.name in selected:
-                raise ValueError(
-                    f"duplicate skill across selected products: {skill.name}"
-                )
-            selected[skill.name] = skill
+        if (
+            source.is_symlink()
+            or not source.is_dir()
+            or not (source / "SKILL.md").is_file()
+        ):
+            raise ValueError(f"invalid product skill directory: {source}")
+        selected[product] = source
+    selected_roots = tuple(source.resolve() for source in selected.values())
+    for source in selected.values():
+        validate_selected_skill_links(source, selected_roots)
     target.mkdir(parents=True)
-    destinations = {
-        source.resolve(): target / name for name, source in selected.items()
-    }
-    for source, destination in destinations.items():
-        copy_tree(source, destination)
-    for source, destination in destinations.items():
-        rebase_skill_links(source, destination, destinations)
+    for name, source in selected.items():
+        copy_tree(source, target / name)
 
 
-def rebase_skill_links(
-    source: Path, target: Path, destinations: dict[Path, Path]
+def validate_selected_skill_links(
+    source: Path, selected_roots: tuple[Path, ...]
 ) -> None:
     for document in source.rglob("*.md"):
-        output = target / document.relative_to(source)
-
-        def rebase(match: re.Match) -> str:
-            raw = match.group(1)
-            path, separator, fragment = raw.partition("#")
+        for raw in re.findall(r"\]\(([^)]+)\)", document.read_text()):
+            path = raw.split("#", 1)[0]
             if not path or "://" in path or path.startswith("mailto:"):
-                return match.group(0)
+                continue
             resolved = (document.parent / path).resolve()
-            for original, destination in destinations.items():
-                if resolved.is_relative_to(original):
-                    mapped = destination / resolved.relative_to(original)
-                    relative = Path(os.path.relpath(mapped, output.parent)).as_posix()
-                    return f"]({relative}{separator}{fragment})"
-            raise ValueError(f"link outside selected skills: {document} -> {raw}")
-
-        output.write_text(re.sub(r"\]\(([^)]+)\)", rebase, document.read_text()))
+            if not any(resolved.is_relative_to(root) for root in selected_roots):
+                raise ValueError(f"link outside selected skills: {document} -> {raw}")
 
 
 def copy_common(target: Path) -> None:
