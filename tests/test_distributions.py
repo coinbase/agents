@@ -51,6 +51,20 @@ class DistributionTests(unittest.TestCase):
         for field, value in expected.items():
             self.assertEqual(interface[field], value)
 
+    def test_chatgpt_listing_describes_only_remote_mcp(self):
+        manifest = builder.load_json(self.chatgpt / "plugin.json")
+        interface = manifest["extensions"]["com.openai"]["interface"]
+        for text in (
+            manifest["description"],
+            interface["shortDescription"],
+            interface["longDescription"],
+            *manifest["keywords"],
+        ):
+            self.assertNotRegex(text.lower(), r"\b(cli|local|shell)\b")
+        self.assertIn("remote MCP", manifest["description"])
+        self.assertIn("remote MCP", interface["longDescription"])
+        self.assertIn("OAuth", interface["longDescription"])
+
     def test_existing_distributions_keep_portable_metadata_and_icon(self):
         portable = self.root / "portable"
         codex = self.root / "codex"

@@ -2,18 +2,18 @@
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "coinbase",
   "version": "0.0.1",
-  "description": "Shared Coinbase workflows with remote MCP and optional local CLI execution. Market data, portfolios, trading, conversions, and x402; financial actions require explicit authorization.",
+  "description": "Coinbase workflows through remote MCP. Market data, portfolios, trading, conversions, and x402; financial actions require explicit authorization.",
   "author": { "name": "Coinbase" },
   "homepage": "https://www.coinbase.com",
   "repository": "https://github.com/coinbase/agents",
   "license": "MIT",
-  "keywords": ["coinbase", "mcp", "cli", "trading", "portfolios", "x402"],
+  "keywords": ["coinbase", "mcp", "trading", "portfolios", "x402"],
   "extensions": {
     "com.openai": {
       "interface": {
         "displayName": "Coinbase",
         "shortDescription": "Coinbase account workflows",
-        "longDescription": "Shared workflows for portfolios, market data, authorized trading, conversions, and budgeted x402 research. Use approved remote MCP with OAuth or an explicitly selected, separately configured local CLI.",
+        "longDescription": "Workflows for portfolios, market data, authorized trading, conversions, and budgeted x402 research through Coinbase's remote MCP server with OAuth.",
         "developerName": "Coinbase",
         "category": "Productivity",
         "capabilities": ["Read", "Write"],
