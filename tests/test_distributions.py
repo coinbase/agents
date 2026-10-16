@@ -90,7 +90,8 @@ class DistributionTests(unittest.TestCase):
     def expected_packaged_skills(self):
         skills = [
             ROOT / "skills/coinbase",
-            *sorted((ROOT / "skills/coinbase-for-agents").iterdir()),
+            *sorted((ROOT / "skills/coinbase-cli").iterdir()),
+            *sorted((ROOT / "skills/coinbase-mcp").iterdir()),
         ]
         expected = {
             Path(skill.name) / path.relative_to(skill): path.read_bytes()
@@ -99,23 +100,26 @@ class DistributionTests(unittest.TestCase):
             if path.is_file()
         }
         router = Path("coinbase/SKILL.md")
-        expected[router] = expected[router].replace(
-            b"../coinbase-for-agents/coinbase-for-agents/SKILL.md",
-            b"../coinbase-for-agents/SKILL.md",
-        )
+        for product in ("coinbase-cli", "coinbase-mcp"):
+            expected[router] = expected[router].replace(
+                f"../{product}/{product}/SKILL.md".encode(),
+                f"../{product}/SKILL.md".encode(),
+            )
         return expected
 
     def test_source_router_and_readme_list_products_not_capability_skills(self):
         router = ROOT / "skills/coinbase/SKILL.md"
-        product = ROOT / "skills/coinbase-for-agents/coinbase-for-agents/SKILL.md"
         self.assertIn("name: coinbase\n", router.read_text())
-        self.assertIn("name: coinbase-for-agents\n", product.read_text())
         for document in (router, ROOT / "README.md"):
             text = document.read_text()
             self.assertIn("| Product |", text)
-            self.assertIn("coinbase-for-agents/coinbase-for-agents/SKILL.md", text)
-            self.assertNotIn("coinbase-trading/SKILL.md", text)
-        self.assertIn("coinbase-trading/SKILL.md", product.read_text())
+            for product in ("coinbase-cli", "coinbase-mcp"):
+                self.assertIn(f"{product}/{product}/SKILL.md", text)
+                self.assertNotIn(f"{product}-trading/SKILL.md", text)
+        for product in ("coinbase-cli", "coinbase-mcp"):
+            entry = ROOT / "skills" / product / product / "SKILL.md"
+            self.assertIn(f"name: {product}\n", entry.read_text())
+            self.assertIn(f"{product}-trading/SKILL.md", entry.read_text())
         builder.validate_links(ROOT)
 
     def test_chatgpt_reuses_canonical_mcp_and_skills(self):
@@ -150,11 +154,14 @@ class DistributionTests(unittest.TestCase):
                 }
                 self.assertEqual(actual, expected)
                 self.assertTrue((package / "skills/coinbase/SKILL.md").is_file())
-                self.assertTrue(
-                    (package / "skills/coinbase-for-agents/SKILL.md").is_file()
-                )
+                self.assertEqual(len(actual), 18)
                 router = (package / "skills/coinbase/SKILL.md").read_text()
-                self.assertIn("](../coinbase-for-agents/SKILL.md)", router)
+                for product in ("coinbase-cli", "coinbase-mcp"):
+                    self.assertTrue(
+                        (package / "skills" / product / "SKILL.md").is_file()
+                    )
+                    self.assertIn(f"](../{product}/SKILL.md)", router)
+                self.assertTrue(all(path.name == "SKILL.md" for path in actual))
 
     def test_chatgpt_icon_preserves_artwork_at_larger_dimensions(self):
         source = ET.parse(ROOT / "assets/coinbase.svg").getroot()

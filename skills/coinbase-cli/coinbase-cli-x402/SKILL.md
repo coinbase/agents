@@ -1,0 +1,56 @@
+---
+name: coinbase-cli-x402
+description: Discover and pay for curated x402 research or data using Coinbase CLI and an explicit USDC budget. Use for resource discovery, paid fetching, payment outcomes, and safe retries. Discovery is free; fetch/pay can spend real funds.
+---
+
+# Coinbase CLI: x402 research
+
+First follow [Coinbase CLI setup and safety](../coinbase-cli/SKILL.md). Use only Coinbase CLI for this workflow; do not switch products or credentials to retry an uncertain financial write.
+
+## Discover, authorize, fetch, report
+
+1. Search the curated resource catalog without spending. Use its actual resource URL, provider, advisory price, and input schema; never invent endpoints or fields.
+2. Establish an explicit research budget and approved resources before payment. General research, connection approval, or a trading request is not unlimited research spending authority.
+3. Generate and retain an `idempotency_key` UUID before each logical payment. Prefer the fetch operation with the discovered URL, flat resource parameters inside `input`, and a `max_amount` within the remaining budget. Do not replace the resource inputs with a hand-built HTTP request.
+4. Inspect `paid`, payment identifiers/expiry, and `data` separately. Report the resource/provider only as identified by returned information. The audited fetch response does not expose an exact debited amount or settlement receipt: report the approved cap separately, do not label it actual spend, and do not treat `paid=true` as proof of settlement. Conservatively reserve the authorized per-request cap against the remaining research budget until reliable payment evidence reconciles it; keep an unknown-outcome reservation rather than freeing it for another purchase.
+
+## Limits and retry safety
+
+- The production configuration uses USDC on Base with a **5 USDC per-payment cap**; verify current controls, which may be stricter. Other environments can differ. Settled payments are irreversible.
+- `max_amount` uses atomic USDC units: **1000000 = 1 USDC**. It can tighten the catalog ceiling, not raise it, and is not a server-enforced session/daily budget. Never split payments to evade controls.
+- The live challenge sets the actual price within request/server limits; catalog prices are advisory. Stop if the remaining authorized budget is insufficient.
+- Fetch supports curated catalog resources and x402 v2, not arbitrary web fetching or unrestricted discovery.
+- A timeout is not proof that payment failed. Inspect available state/recovery instructions, retain the original `idempotency_key` for the same logical payment, and never blindly create a new hold or switch interfaces. Stop if the outcome cannot be established safely.
+- A definite terminal rejection is different from an unknown outcome. Follow the returned recovery instructions: only a new, authorized attempt after a terminal no-payment rejection may use a new key. Some pre-payment transient failures explicitly request the original key. Never treat every error as the same retry case.
+- Payment success does not guarantee usable data. Report empty data, rejected paid requests, and delivery failures separately; do not repeatedly purchase access to resolve a provider problem.
+
+## Low-level pay
+
+Use pay only when an explicitly supported request mechanism can deliver the payment artifact securely to the intended provider. Copy the actual challenge/version and fields from the current schema; pay authorizes funds but does not fetch the resource.
+
+Treat `payment_header` as sensitive. Never show it in chat/logs or forward it across origins. Use `X-PAYMENT` for v1 and `PAYMENT-SIGNATURE` for v2; do not pay again just to try another header. If the harness cannot keep the artifact out of model-visible output, use fetch instead.
+
+Do not claim native SIWX signing, invent an external signer, or repeatedly pay around unsupported authentication. Verify required signing/asynchronous retrieval support before spending. For a trade informed by research, load [trading](../coinbase-cli-trading/SKILL.md) and obtain separate order approval.
+
+## CLI execution
+
+Use the intended environment/key and discover installed command help/templates:
+
+```sh
+coinbase x402 resources --help
+coinbase x402 resources q==research
+coinbase x402 fetch --template
+coinbase x402 pay --template
+```
+
+After free discovery and budget approval, prepare a JSON request containing the actual catalog `resource` (substitute documented path parameters), schema-valid `input`, an atomic-unit integer-string `max_amount` within budget, the intended `portfolio_id` where needed, and an `idempotency_key` generated and retained before the call. Read/parse and validate the file locally: `coinbase x402 fetch @request.json --dry-run` does not display or validate that raw body in the audited CLI. Submit `COINBASE_NO_HISTORY=1 coinbase x402 fetch @request.json` only for the approved purchase. Do not commit the request file or regenerate the key on an uncertain retry.
+
+Use body/query syntax from the installed template; shell-quote values or use a validated JSON body file. Inspect both exit status and payment/data fields. A lost response does not mean there was no hold. Keep the original environment and key for recovery; never retry through remote MCP.
+
+The CLI uses the Agent API for all x402 operations, not direct Brokerage. `portfolio_id` selects the eligible consumer portfolio; omission succeeds only when discovery can identify exactly one. `account_id` may select a USDC account within it; the server does not guess when there are zero/multiple candidates.
+
+Fetch returns `data`, `paid`, and optional `payment_id`, `idempotency_key`, `expires_at`, not an exact spent-amount field. A caller-supplied key may not be echoed by fetch, so retain it before calling. Report caps separately from actual spend and reserve budget conservatively as described in the workflow above.
+
+Low-level pay requires `scheme`, `network`, `asset`, `pay_to`, `amount`, `max_amount`, and integer `max_timeout_seconds`. Production supports `exact`, Base `eip155:8453`, USDC, and a 1–300 second authorization window. Copy challenge version into `x402_version` (default is 1); v2 requires the full compatible `extra` object. Follow definite terminal-rejection versus unknown-outcome recovery instructions; do not retry all errors alike.
+
+Low-level `coinbase x402 pay` returns a sensitive payment artifact, not resource data. If the shell/tool would expose it to model-visible output, prefer fetch. Do not run commands that print tokens/headers or attach them to an unverified provider origin.

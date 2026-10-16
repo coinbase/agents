@@ -4,11 +4,12 @@ Skills and plugins for using Coinbase products with AI agents. Start with the [`
 
 ## Products
 
-[Agent Skills](https://agentskills.io/specification) provide reusable workflows and safety instructions. Each product owns its setup, capability skills, and execution references.
+[Agent Skills](https://agentskills.io/specification) provide reusable workflows and safety instructions. Each product owns its setup and self-contained capability skills.
 
 | Product | Purpose | Entry skill |
 | --- | --- | --- |
-| Coinbase for Agents | Market data, portfolios, trading, conversions, and research through Coinbase MCP or Coinbase CLI | [coinbase-for-agents](skills/coinbase-for-agents/coinbase-for-agents/SKILL.md) |
+| Coinbase CLI | Local command-line workflows with CDP API-key credentials and approved shell access, including monitoring | [coinbase-cli](skills/coinbase-cli/coinbase-cli/SKILL.md) |
+| Coinbase MCP | Hosted tools through native OAuth, without CLI installation or shell access | [coinbase-mcp](skills/coinbase-mcp/coinbase-mcp/SKILL.md) |
 
 The shared router stays at `skills/coinbase/`. Product skills live under `skills/<product>/<skill>/`. Add a product entry here and in the router when introducing a new product; keep individual capability lists inside that product.
 
@@ -25,7 +26,7 @@ Download versioned ZIP or tar archives from [Coinbase Agent Plugin downloads](ht
 
 For local development, run `python3 scripts/build-distributions.py dist` and use the generated directories under `dist/site/packages/`. The repository root is not an installable plugin.
 
-The existing distributions include the shared `coinbase` router and the `coinbase-for-agents` product. The builder flattens the selected skills into the package's `skills/` directory and updates local Markdown links to match. Plugin names, `/coinbase:coinbase`, and installation paths are unchanged. Adding another product directory does not automatically ship it or configure its MCP server.
+The existing distributions include the shared `coinbase` router and the `coinbase-cli` and `coinbase-mcp` products. The builder flattens the selected skills into the package's `skills/` directory and updates local Markdown links to match. Plugin names, `/coinbase:coinbase`, and installation paths are unchanged; capability skills now use product-specific names such as `coinbase-cli-trading` and `coinbase-mcp-trading`. Adding another product directory does not automatically ship it or configure its MCP server.
 
 ### ChatGPT directory submission
 
@@ -72,7 +73,7 @@ hermes plugins enable coinbase
 
 Use the plugin key returned by `list` if different. Follow [Hermes's portable-plugin documentation](https://hermes-agent.nousresearch.com/docs/developer-guide/plugins/#portable-agent-plugins-v1-packages) and native OAuth setup. Reuse existing connections rather than adding duplicates.
 
-For standalone skills, build or download a generated package and install its complete `skills/` directory using your harness's supported method. This includes the shared router, selected product skills, and links adjusted for the flat installed layout. Do not flatten source directories by hand or assume every harness discovers nested skills. The router remains at `skills/coinbase/` in source; product-specific source paths now use `skills/coinbase-for-agents/<skill>/`. Update path-based source installers and preserve existing installations and settings.
+For standalone skills, build or download a generated package and install its complete `skills/` directory using your harness's supported method. This includes the shared router, selected product skills, and links adjusted for the flat installed layout. Do not flatten source directories by hand or assume every harness discovers nested skills. The router remains at `skills/coinbase/` in source; product-specific paths now use `skills/coinbase-cli/<skill>/` or `skills/coinbase-mcp/<skill>/`. Replace old combined-product installs rather than leaving stale `coinbase-for-agents` or unqualified capability skills alongside the new names, using your harness's supported update/removal flow. Preserve unrelated installations and settings.
 
 ## Safety and support
 

@@ -5,17 +5,18 @@ description: Find the right Coinbase product and load its workflows. Start here 
 
 # Coinbase
 
-Choose the product before choosing an execution interface. Coinbase products can use different funds, credentials, approval flows, and tools; sharing a brand or using MCP does not make them interchangeable.
+Choose the Coinbase product that matches the user's request and approved environment. Each product owns its setup, credentials, and workflows; access to one product does not establish another product's permissions or access to the same funds.
 
 ## Choose a product
 
 | Product | Use for | Entry skill |
 | --- | --- | --- |
-| Coinbase for Agents | Coinbase portfolios, market data, trading, conversions, futures, equities, research, and monitoring through Coinbase MCP or Coinbase CLI | [coinbase-for-agents](../coinbase-for-agents/coinbase-for-agents/SKILL.md) |
+| Coinbase CLI | Local command-line workflows with CDP API-key credentials and approved shell access, including bounded monitoring | [coinbase-cli](../coinbase-cli/coinbase-cli/SKILL.md) |
+| Coinbase MCP | Hosted tools through native OAuth, without CLI installation or shell access | [coinbase-mcp](../coinbase-mcp/coinbase-mcp/SKILL.md) |
 
-1. Honor the user's named product and intended funds. If the request could fit multiple products and the context does not resolve which one, ask before connecting or acting.
-2. Load the selected product's entry skill. It owns setup, supported execution interfaces, capability routing, authentication errors, and disconnecting. Load only the references needed for the task.
-3. If the product or required capability is not included or supported, explain the limitation. Do not invent a connection, substitute another product, or assume credentials apply across products.
+1. Honor the user's named product and intended funds. Otherwise choose an already approved and configured product that supports the task and intended scope. If none is configured, explain the options and ask before setup. If more than one product could fit and the choice or funds are ambiguous, ask before acting.
+2. Load the selected product's entry skill for setup, authentication, capability routing, safety, and disconnecting. Each capability skill includes its own execution instructions.
+3. If the required capability or approved connection is unavailable, explain the limitation and ask before changing products or credentials. Do not install another product's runtime, infer its permissions, or treat a denial as permission to use broader credentials.
 
 ## Shared safeguards
 

@@ -17,7 +17,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-COINBASE_SKILL_PRODUCTS = ("coinbase-for-agents",)
+COINBASE_SKILL_PRODUCTS = ("coinbase-cli", "coinbase-mcp")
 EXPECTED_MCP_URL = "https://agents.coinbase.com/mcp"
 OUTPUT_MARKER = ".coinbase-agents-distributions"
 PRERELEASE_IDENTIFIER = r"(?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)"
