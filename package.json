@@ -1,0 +1,17 @@
+{
+  "name": "coinbase-agents-dev",
+  "private": true,
+  "type": "module",
+  "description": "Development tooling for the coinbase-paper skill simulator (typecheck and tests). Not shipped in plugin packages.",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test:paper": "node --experimental-strip-types --no-warnings --test \"skills/coinbase-paper/scripts/src/**/*.test.ts\""
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "typescript": "^5.7.0"
+  }
+}

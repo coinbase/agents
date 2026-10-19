@@ -1,6 +1,7 @@
 import hashlib
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 import tarfile
@@ -97,12 +98,13 @@ class DistributionTests(unittest.TestCase):
             ROOT / "skills/coinbase",
             ROOT / "skills/coinbase-cli",
             ROOT / "skills/coinbase-mcp",
+            ROOT / "skills/coinbase-paper",
         ]
         return {
             Path(skill.name) / path.relative_to(skill): path.read_bytes()
             for skill in skills
             for path in skill.rglob("*")
-            if path.is_file()
+            if path.is_file() and not path.name.endswith(".test.ts")
         }
 
     def test_source_router_and_readme_list_products_not_capability_skills(self):
@@ -111,7 +113,7 @@ class DistributionTests(unittest.TestCase):
         for document in (router, ROOT / "README.md"):
             text = document.read_text()
             self.assertIn("| Product |", text)
-            for product in ("coinbase-cli", "coinbase-mcp"):
+            for product in ("coinbase-cli", "coinbase-mcp", "coinbase-paper"):
                 self.assertIn(f"{product}/SKILL.md", text)
                 self.assertNotIn(f"{product}/{product}/", text)
                 self.assertNotIn(f"{product}-trading/SKILL.md", text)
@@ -176,17 +178,26 @@ class DistributionTests(unittest.TestCase):
                 self.assertTrue((package / "skills/coinbase/SKILL.md").is_file())
                 self.assertEqual(
                     {path.parts[0] for path in actual if path.name == "SKILL.md"},
-                    {"coinbase", "coinbase-cli", "coinbase-mcp"},
+                    {"coinbase", "coinbase-cli", "coinbase-mcp", "coinbase-paper"},
                 )
                 references = {path for path in actual if "references" in path.parts}
-                self.assertEqual(len(references), 15)
+                self.assertEqual(len(references), 16)
                 router = (package / "skills/coinbase/SKILL.md").read_text()
-                for product in ("coinbase-cli", "coinbase-mcp"):
+                for product in ("coinbase-cli", "coinbase-mcp", "coinbase-paper"):
                     self.assertTrue(
                         (package / "skills" / product / "SKILL.md").is_file()
                     )
                     self.assertIn(f"](../{product}/SKILL.md)", router)
-                self.assertTrue(all(path.suffix == ".md" for path in actual))
+                self.assertTrue(
+                    all(
+                        path.suffix == ".md"
+                        or path.parts[:2] == ("coinbase-paper", "scripts")
+                        for path in actual
+                    )
+                )
+                self.assertFalse(any(path.name.endswith(".test.ts") for path in actual))
+                launcher = package / "skills/coinbase-paper/scripts/coinbase-paper"
+                self.assertTrue(os.access(launcher, os.X_OK))
 
     def test_chatgpt_icon_preserves_artwork_at_larger_dimensions(self):
         source = ET.parse(ROOT / "assets/coinbase.svg").getroot()
@@ -277,7 +288,16 @@ class DistributionTests(unittest.TestCase):
                 config["mcpServers"]["coinbase"]["url"],
                 "https://agents.coinbase.com/mcp/chatgpt",
             )
+            launcher = f"{name}/skills/coinbase-paper/scripts/coinbase-paper"
+            self.assertEqual(
+                (archive.getinfo(launcher).external_attr >> 16) & 0o777, 0o755
+            )
+            self.assertEqual(
+                (archive.getinfo(f"{name}/mcp.json").external_attr >> 16) & 0o777, 0o644
+            )
+            self.assertFalse(any(n.endswith(".test.ts") for n in archive.namelist()))
         with tarfile.open(site / "downloads" / f"{name}.tar.gz") as archive:
+            self.assertEqual(archive.getmember(launcher).mode, 0o755)
             with archive.extractfile(f"{name}/mcp.json") as config_file:
                 config = json.load(config_file)
             self.assertEqual(

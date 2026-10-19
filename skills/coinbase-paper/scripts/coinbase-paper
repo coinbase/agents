@@ -1,0 +1,5 @@
+#!/bin/sh
+# Coinbase paper trading simulator: virtual funds, public market data, never live orders.
+# Requires Node.js 22.13+ (22.x), 23.4+ (23.x) or 24+; Node 24 LTS is recommended.
+dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+exec node --experimental-strip-types --no-warnings "$dir/src/cli.ts" "$@"

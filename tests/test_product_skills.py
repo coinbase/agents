@@ -40,6 +40,7 @@ class ProductSkillsTests(unittest.TestCase):
     def test_default_selection_excludes_other_products(self):
         skill = self.add_skill("coinbase-cli")
         self.add_skill("coinbase-mcp")
+        self.add_skill("coinbase-paper")
         for relative in ("references/cli.md", "plugins/example.md", "assets/data.json"):
             path = skill / relative
             path.parent.mkdir(parents=True)
@@ -53,7 +54,11 @@ class ProductSkillsTests(unittest.TestCase):
                 for p in skill.rglob("*")
                 if p.is_file()
             }
-            | {Path("coinbase/SKILL.md"), Path("coinbase-mcp/SKILL.md")},
+            | {
+                Path("coinbase/SKILL.md"),
+                Path("coinbase-mcp/SKILL.md"),
+                Path("coinbase-paper/SKILL.md"),
+            },
         )
         builder.validate_skills(self.target.parent)
 
@@ -204,6 +209,18 @@ class ProductSkillsTests(unittest.TestCase):
             (skill / "SKILL.md").write_text(text)
             with self.subTest(text=text), self.assertRaises(ValueError):
                 builder.validate_skills(self.target.parent)
+
+    def test_dev_only_test_files_are_not_packaged(self):
+        skill = self.add_skill("coinbase-paper")
+        scripts = skill / "scripts/src"
+        scripts.mkdir(parents=True)
+        (scripts / "cli.ts").write_text("export {};\n")
+        (scripts / "cli.test.ts").write_text("export {};\n")
+        builder.copy_skills(self.target, ("coinbase-paper",))
+        packaged = self.target / "coinbase-paper/scripts/src"
+        self.assertTrue((packaged / "cli.ts").is_file())
+        self.assertFalse((packaged / "cli.test.ts").exists())
+        self.assertTrue((scripts / "cli.test.ts").is_file(), "source is unchanged")
 
 
 if __name__ == "__main__":

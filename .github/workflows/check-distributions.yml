@@ -40,3 +40,53 @@ jobs:
       - name: Verify checksums
         working-directory: dist/site/downloads
         run: sha256sum --check SHA256SUMS
+
+  paper-simulator:
+    name: Paper simulator (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["22", "24"]
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Install dev tooling
+        run: npm ci --ignore-scripts
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm run test:paper
+
+      - name: Launcher smoke
+        run: |
+          skills/coinbase-paper/scripts/coinbase-paper --version
+          skills/coinbase-paper/scripts/coinbase-paper doctor --data-dir "$RUNNER_TEMP/paper"
+
+  paper-runtime-minimum:
+    name: Paper simulator on the minimum Node (22.13)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22.13.0"
+
+      - name: Launcher smoke (offline)
+        run: |
+          skills/coinbase-paper/scripts/coinbase-paper --version
+          skills/coinbase-paper/scripts/coinbase-paper doctor --data-dir "$RUNNER_TEMP/paper"
+          skills/coinbase-paper/scripts/coinbase-paper init --data-dir "$RUNNER_TEMP/paper"
+          skills/coinbase-paper/scripts/coinbase-paper balance --data-dir "$RUNNER_TEMP/paper"
+

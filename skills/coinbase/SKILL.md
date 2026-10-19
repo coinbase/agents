@@ -13,6 +13,7 @@ Choose the Coinbase product that matches the user's request and approved environ
 | --- | --- | --- |
 | Coinbase CLI | Local command-line workflows with CDP API-key credentials and approved shell access, including bounded monitoring | [coinbase-cli](../coinbase-cli/SKILL.md) |
 | Coinbase MCP | Hosted tools through native OAuth, without CLI installation or shell access | [coinbase-mcp](../coinbase-mcp/SKILL.md) |
+| Coinbase paper trading | Local practice trading with virtual funds and public market data, for hosts with a bash terminal and Node.js; no credentials and never real orders | [coinbase-paper](../coinbase-paper/SKILL.md) |
 
 1. Honor the user's named product and intended funds. Otherwise choose an already approved and configured product that supports the task and intended scope. If none is configured, explain the options and ask before setup. If more than one product could fit and the choice or funds are ambiguous, ask before acting.
 2. Load the selected product's skill for setup, authentication, capability routing, safety, and disconnecting. Read its applicable capability references before planning or executing; those guides contain the workflow-specific safeguards and execution instructions.

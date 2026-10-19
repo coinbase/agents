@@ -16,7 +16,9 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-COINBASE_SKILL_PRODUCTS = ("coinbase-cli", "coinbase-mcp")
+COINBASE_SKILL_PRODUCTS = ("coinbase-cli", "coinbase-mcp", "coinbase-paper")
+# Development-only files kept next to skill sources but never shipped in packages.
+DEV_ONLY_PATTERNS = ("*.test.ts",)
 EXPECTED_MCP_URL = "https://agents.coinbase.com/mcp"
 EXPECTED_CHATGPT_MCP_URL = "https://agents.coinbase.com/mcp/chatgpt"
 OUTPUT_MARKER = ".coinbase-agents-distributions"
@@ -73,7 +75,7 @@ def copy_tree(source: Path, target: Path) -> None:
     for path in source.rglob("*"):
         if path.is_symlink():
             raise ValueError(f"symlink is not allowed in a distribution: {path}")
-    shutil.copytree(source, target)
+    shutil.copytree(source, target, ignore=shutil.ignore_patterns(*DEV_ONLY_PATTERNS))
 
 
 def copy_skills(
@@ -310,6 +312,11 @@ def validate_codex(root: Path, version: str) -> None:
     validate_portable(root / "plugins/coinbase", version)
 
 
+def file_mode(path: Path) -> int:
+    """0755 for files executable by their owner (skill launchers), else 0644."""
+    return 0o755 if path.stat().st_mode & stat.S_IXUSR else 0o644
+
+
 def archive(package_dir: Path, downloads: Path) -> list[Path]:
     base = downloads / package_dir.name
     paths = [package_dir, *sorted(package_dir.rglob("*"))]
@@ -323,7 +330,9 @@ def archive(package_dir: Path, downloads: Path) -> list[Path]:
             )
             info.create_system = 3
             info.external_attr = (
-                (stat.S_IFDIR | 0o755) if path.is_dir() else (stat.S_IFREG | 0o644)
+                (stat.S_IFDIR | 0o755)
+                if path.is_dir()
+                else (stat.S_IFREG | file_mode(path))
             ) << 16
             archive_file.writestr(
                 info,
@@ -349,7 +358,7 @@ def archive(package_dir: Path, downloads: Path) -> list[Path]:
                         info.mode = 0o755
                         archive_file.addfile(info)
                     else:
-                        info.mode = 0o644
+                        info.mode = file_mode(path)
                         info.size = path.stat().st_size
                         with path.open("rb") as source:
                             archive_file.addfile(info, source)

@@ -58,6 +58,7 @@ class CoinbaseProductsTests(unittest.TestCase):
             {path.relative_to(SKILLS) for path in SKILLS.rglob("SKILL.md")},
             {
                 Path("coinbase/SKILL.md"),
+                Path("coinbase-paper/SKILL.md"),
                 *(Path(product) / "SKILL.md" for product in PRODUCTS),
             },
         )
