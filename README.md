@@ -10,6 +10,7 @@ Skills and plugins for using Coinbase products with AI agents. Start with the [`
 | --- | --- | --- |
 | Coinbase CLI | Local command-line workflows with CDP API-key credentials and approved shell access, including monitoring | [coinbase-cli](skills/coinbase-cli/SKILL.md) |
 | Coinbase MCP | Hosted tools through native OAuth, without CLI installation or shell access | [coinbase-mcp](skills/coinbase-mcp/SKILL.md) |
+| Wallet MCP | Wallet account tools (balances, send, swap, signing, x402, batched calls) and third-party plugins through the hosted Wallet MCP server. Source only: not yet in the shared router or generated distributions | [wallet-mcp](skills/wallet-mcp/SKILL.md) |
 
 The shared router stays at `skills/coinbase/`. Each product has one skill at `skills/<product>/SKILL.md`, with capability guides under `skills/<product>/references/`. Add a product entry here and in the router when introducing a new product; keep individual capability lists inside that product.
 

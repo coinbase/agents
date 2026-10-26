@@ -59,6 +59,7 @@ class CoinbaseProductsTests(unittest.TestCase):
             {
                 Path("coinbase/SKILL.md"),
                 *(Path(product) / "SKILL.md" for product in PRODUCTS),
+                Path("wallet-mcp/SKILL.md"),
             },
         )
 
