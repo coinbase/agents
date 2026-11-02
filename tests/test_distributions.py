@@ -147,13 +147,33 @@ class DistributionTests(unittest.TestCase):
                     builder.validate_chatgpt(self.chatgpt, self.version)
 
     def test_chatgpt_reuses_canonical_skills(self):
-        expected = self.expected_packaged_skills()
+        omitted = {Path(name) for name in builder.CHATGPT_OMITTED_SKILL_FILES}
+        expected = {
+            path: builder.distribution_text(content.decode(), "chatgpt").encode()
+            for path, content in self.expected_packaged_skills().items()
+            if path.parts[0] in {"coinbase", "coinbase-mcp"} and path not in omitted
+        }
         actual = {
             path.relative_to(self.chatgpt / "skills"): path.read_bytes()
             for path in (self.chatgpt / "skills").rglob("*")
             if path.is_file()
         }
         self.assertEqual(actual, expected)
+
+    def test_chatgpt_package_omits_cli_and_x402(self):
+        builder.validate_chatgpt(self.chatgpt, self.version)
+        skills = self.chatgpt / "skills"
+        self.assertEqual(
+            {path.name for path in skills.iterdir()}, {"coinbase", "coinbase-mcp"}
+        )
+        self.assertFalse((skills / "coinbase-mcp/references/x402.md").exists())
+        for path in self.chatgpt.rglob("*"):
+            if path.is_file() and path.suffix in {".md", ".json"}:
+                with self.subTest(path=path):
+                    text = path.read_text()
+                    self.assertNotIn("x402", text.lower())
+                    self.assertNotIn("coinbase-cli/", text)
+                    self.assertNotIn("omit: chatgpt", text)
 
     def test_all_distributions_preserve_flat_skill_layout(self):
         portable = self.root / "portable"
@@ -163,7 +183,7 @@ class DistributionTests(unittest.TestCase):
         builder.build_claude(claude)
         builder.build_codex(codex, portable)
         expected = self.expected_packaged_skills()
-        for package in (portable, claude, codex / "plugins/coinbase", self.chatgpt):
+        for package in (portable, claude, codex / "plugins/coinbase"):
             with self.subTest(package=package):
                 builder.validate_skills(package)
                 builder.validate_links(package)

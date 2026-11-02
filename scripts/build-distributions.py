@@ -17,6 +17,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 COINBASE_SKILL_PRODUCTS = ("coinbase-cli", "coinbase-mcp")
+CHATGPT_SKILL_PRODUCTS = ("coinbase-mcp",)
+CHATGPT_OMITTED_SKILL_FILES = ("coinbase-mcp/references/x402.md",)
+OMIT_MARKER = re.compile(r"<!--\s*omit:\s*([a-z0-9-]+(?:\s*,\s*[a-z0-9-]+)*)\s*-->")
 EXPECTED_MCP_URL = "https://agents.coinbase.com/mcp"
 EXPECTED_CHATGPT_MCP_URL = "https://agents.coinbase.com/mcp/chatgpt"
 OUTPUT_MARKER = ".coinbase-agents-distributions"
@@ -76,8 +79,26 @@ def copy_tree(source: Path, target: Path) -> None:
     shutil.copytree(source, target)
 
 
+def distribution_text(text: str, distribution: str | None) -> str:
+    """Drop lines marked `<!-- omit: <distribution> -->` for that distribution."""
+    if distribution is None:
+        return text
+    kept = []
+    for line in text.splitlines(keepends=True):
+        match = OMIT_MARKER.search(line)
+        if match and distribution in {
+            name.strip() for name in match.group(1).split(",")
+        }:
+            continue
+        kept.append(line)
+    return "".join(kept)
+
+
 def copy_skills(
-    target: Path, products: tuple[str, ...] = COINBASE_SKILL_PRODUCTS
+    target: Path,
+    products: tuple[str, ...] = COINBASE_SKILL_PRODUCTS,
+    distribution: str | None = None,
+    omitted_files: tuple[str, ...] = (),
 ) -> None:
     source_root = ROOT / "skills"
     if source_root.is_symlink() or not products:
@@ -102,44 +123,88 @@ def copy_skills(
             raise ValueError(f"invalid product skill directory: {source}")
         selected[product] = source
     selected_roots = tuple(source.resolve() for source in selected.values())
+    omitted = set()
+    for relative in omitted_files:
+        path = (source_root / relative).resolve()
+        if (
+            path.name == "SKILL.md"
+            or not path.is_file()
+            or not any(path.is_relative_to(root) for root in selected_roots)
+        ):
+            raise ValueError(f"invalid omitted skill file: {relative}")
+        omitted.add(path)
     for source in selected.values():
-        validate_selected_skill_links(source, selected_roots)
+        validate_selected_skill_links(source, selected_roots, distribution, omitted)
     target.mkdir(parents=True)
     for name, source in selected.items():
         copy_tree(source, target / name)
+        if distribution is None:
+            continue
+        for path in source.rglob("*"):
+            packaged = target / name / path.relative_to(source)
+            if path.resolve() in omitted:
+                packaged.unlink()
+            elif path.suffix == ".md":
+                text = path.read_text()
+                rendered = distribution_text(text, distribution)
+                if rendered != text:
+                    packaged.write_text(rendered)
 
 
 def validate_selected_skill_links(
-    source: Path, selected_roots: tuple[Path, ...]
+    source: Path,
+    selected_roots: tuple[Path, ...],
+    distribution: str | None = None,
+    omitted: set[Path] = frozenset(),
 ) -> None:
     for document in source.rglob("*.md"):
-        for raw in re.findall(r"\]\(([^)]+)\)", document.read_text()):
+        if document.resolve() in omitted:
+            continue
+        text = distribution_text(document.read_text(), distribution)
+        for raw in re.findall(r"\]\(([^)]+)\)", text):
             path = raw.split("#", 1)[0]
             if not path or "://" in path or path.startswith("mailto:"):
                 continue
             resolved = (document.parent / path).resolve()
             if not any(resolved.is_relative_to(root) for root in selected_roots):
                 raise ValueError(f"link outside selected skills: {document} -> {raw}")
+            if resolved in omitted:
+                raise ValueError(f"link to omitted skill file: {document} -> {raw}")
 
 
-def copy_common(target: Path) -> None:
+def copy_common(target: Path, manifest_dir: str | None = None) -> None:
     copy_file(ROOT / "LICENSE", target / "LICENSE")
-    copy_file(ROOT / "src/plugins/README.md", target / "README.md")
+    readme = ROOT / f"src/plugins/{manifest_dir}/README.md" if manifest_dir else None
+    if readme is None or not readme.exists():
+        readme = ROOT / "src/plugins/README.md"
+    copy_file(readme, target / "README.md")
 
 
-def build_portable(target: Path, manifest_dir: str = "portable") -> None:
+def build_portable(
+    target: Path,
+    manifest_dir: str = "portable",
+    products: tuple[str, ...] = COINBASE_SKILL_PRODUCTS,
+    distribution: str | None = None,
+    omitted_files: tuple[str, ...] = (),
+) -> None:
     target.mkdir(parents=True)
     copy_file(ROOT / f"src/plugins/{manifest_dir}/plugin.json", target / "plugin.json")
     copy_file(ROOT / f"src/plugins/{manifest_dir}/mcp.json", target / "mcp.json")
-    copy_skills(target / "skills")
+    copy_skills(target / "skills", products, distribution, omitted_files)
     asset_dir = target / "com.openai/assets"
     asset_dir.mkdir(parents=True)
     copy_file(ROOT / "assets/coinbase.svg", asset_dir / "coinbase.svg")
-    copy_common(target)
+    copy_common(target, manifest_dir)
 
 
 def build_chatgpt(target: Path) -> None:
-    build_portable(target, "chatgpt")
+    build_portable(
+        target,
+        "chatgpt",
+        products=CHATGPT_SKILL_PRODUCTS,
+        distribution="chatgpt",
+        omitted_files=CHATGPT_OMITTED_SKILL_FILES,
+    )
     icon_path = target / "com.openai/assets/coinbase.svg"
     ET.register_namespace("", "http://www.w3.org/2000/svg")
     icon = ET.parse(

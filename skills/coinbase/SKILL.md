@@ -11,7 +11,7 @@ Choose the Coinbase product that matches the user's request and approved environ
 
 | Product | Use for | Entry skill |
 | --- | --- | --- |
-| Coinbase CLI | Local command-line workflows with CDP API-key credentials and approved shell access, including bounded monitoring | [coinbase-cli](../coinbase-cli/SKILL.md) |
+| Coinbase CLI | Local command-line workflows with CDP API-key credentials and approved shell access, including bounded monitoring | [coinbase-cli](../coinbase-cli/SKILL.md) <!-- omit: chatgpt --> |
 | Coinbase MCP | Hosted tools through native OAuth, without CLI installation or shell access | [coinbase-mcp](../coinbase-mcp/SKILL.md) |
 
 1. Honor the user's named product and intended funds. Otherwise choose an already approved and configured product that supports the task and intended scope. If none is configured, explain the options and ask before setup. If more than one product could fit and the choice or funds are ambiguous, ask before acting.

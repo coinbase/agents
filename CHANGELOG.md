@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.0.2 — Unreleased
+
+- Ship only the shared router and `coinbase-mcp` in the ChatGPT distribution. Omit `coinbase-mcp/references/x402.md`, because `/mcp/chatgpt` does not expose x402 tools, and give ChatGPT its own package README.
+- Let a distribution omit selected skill files and drop source lines marked `<!-- omit: <distribution> -->`. Other distributions still copy skills unchanged, and links to unselected skills or omitted files fail the build.
+- Remove x402 from the ChatGPT listing copy and keywords, and replace its starter prompt with three prompts for portfolio review, rebalancing, and scaling in with limit orders.
+- Describe paid research in the `coinbase-mcp` skill description without naming x402.
+- Bump every distribution to 0.0.2.
+
 ## 0.0.1 — Unreleased
 
 - Add the `wallet-mcp` skill (moved from `base/skills`, with `Base MCP` renamed to `Wallet MCP` and the install command pointed at `coinbase/agents`) as source only at `skills/wallet-mcp/`. It is not added to the shared router, `COINBASE_SKILL_PRODUCTS`, or any generated distribution, and no MCP configuration changes.

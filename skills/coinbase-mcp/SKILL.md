@@ -1,6 +1,6 @@
 ---
 name: coinbase-mcp
-description: Connect hosted Coinbase MCP through native OAuth, verify access, and route remote tool workflows for portfolios, market data, trading, conversions, futures, equities, and x402 research. Use for MCP authentication and disconnecting; no CLI or shell setup is needed.
+description: Connect hosted Coinbase MCP through native OAuth, verify access, and route remote tool workflows for portfolios, market data, trading, conversions, futures, equities, and paid research where the server exposes it. Use for MCP authentication and disconnecting; no CLI or shell setup is needed.
 ---
 
 # Coinbase MCP
@@ -50,7 +50,7 @@ Read the applicable guide before planning or executing a workflow; setup alone d
 | [Conversions](references/convert.md) | Quote, approve, and execute currency conversions |
 | [Equities](references/equities.md) | Eligible stocks, sessions, and whole-share constraints; also read Trading |
 | [Futures](references/futures.md) | Eligible CFM dated futures and margin risk; also read Trading |
-| [x402 research](references/x402.md) | Discover and pay for curated research within an approved budget |
+| [x402 research](references/x402.md) | Discover and pay for curated research within an approved budget <!-- omit: chatgpt --> |
 
 ## Monitoring limits
 

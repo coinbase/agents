@@ -205,6 +205,85 @@ class ProductSkillsTests(unittest.TestCase):
             with self.subTest(text=text), self.assertRaises(ValueError):
                 builder.validate_skills(self.target.parent)
 
+    def test_distribution_drops_marked_lines_and_omitted_files(self):
+        skill = self.add_skill("coinbase-mcp")
+        entry = skill / "SKILL.md"
+        source = entry.read_text() + (
+            "[Trading](references/trading.md)\n"
+            "[Paid](references/paid.md) <!-- omit: chatgpt -->\n"
+            "[Other](references/trading.md) <!-- omit: claude -->\n"
+        )
+        entry.write_text(source)
+        references = skill / "references"
+        references.mkdir()
+        (references / "trading.md").write_text("# Trading\n")
+        (references / "paid.md").write_text("# Paid\n")
+        router = self.router / "SKILL.md"
+        router_source = router.read_text() + (
+            "[CLI](../coinbase-cli/SKILL.md) <!-- omit: chatgpt -->\n"
+        )
+        router.write_text(router_source)
+        builder.copy_skills(
+            self.target,
+            ("coinbase-mcp",),
+            distribution="chatgpt",
+            omitted_files=("coinbase-mcp/references/paid.md",),
+        )
+        packaged = (self.target / "coinbase-mcp/SKILL.md").read_text()
+        self.assertNotIn("paid.md", packaged)
+        self.assertIn("omit: claude", packaged)
+        self.assertNotIn(
+            "coinbase-cli", (self.target / "coinbase/SKILL.md").read_text()
+        )
+        self.assertFalse((self.target / "coinbase-mcp/references/paid.md").exists())
+        self.assertEqual(entry.read_text(), source)
+        self.assertEqual(router.read_text(), router_source)
+        builder.validate_links(self.target.parent)
+
+    def test_other_distributions_copy_marked_lines_unchanged(self):
+        skill = self.add_skill("coinbase-mcp")
+        entry = skill / "SKILL.md"
+        source = entry.read_text() + "Paid research. <!-- omit: chatgpt -->\n"
+        entry.write_text(source)
+        builder.copy_skills(self.target, ("coinbase-mcp",))
+        self.assertEqual((self.target / "coinbase-mcp/SKILL.md").read_text(), source)
+
+    def test_links_to_omitted_files_fail(self):
+        skill = self.add_skill("coinbase-mcp")
+        entry = skill / "SKILL.md"
+        entry.write_text(entry.read_text() + "[Paid](references/paid.md)\n")
+        (skill / "references").mkdir()
+        (skill / "references/paid.md").write_text("# Paid\n")
+        with self.assertRaisesRegex(ValueError, "link to omitted skill file"):
+            builder.copy_skills(
+                self.target,
+                ("coinbase-mcp",),
+                distribution="chatgpt",
+                omitted_files=("coinbase-mcp/references/paid.md",),
+            )
+
+    def test_rejects_invalid_omitted_files(self):
+        self.add_skill("coinbase-mcp")
+        self.add_skill("coinbase-cli")
+        (self.source / "coinbase-cli/references").mkdir()
+        (self.source / "coinbase-cli/references/x.md").write_text("# X\n")
+        for relative in (
+            "coinbase-mcp/SKILL.md",
+            "coinbase-mcp/references/missing.md",
+            "coinbase-cli/references/x.md",
+            "../outside.md",
+        ):
+            with (
+                self.subTest(relative=relative),
+                self.assertRaisesRegex(ValueError, "invalid omitted skill file"),
+            ):
+                builder.copy_skills(
+                    self.root / f"out-{abs(hash(relative))}",
+                    ("coinbase-mcp",),
+                    distribution="chatgpt",
+                    omitted_files=(relative,),
+                )
+
 
 if __name__ == "__main__":
     unittest.main()

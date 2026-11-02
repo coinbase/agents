@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "coinbase",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Shared Coinbase workflows with remote MCP and optional local CLI execution. Market data, portfolios, trading, conversions, and x402; financial actions require explicit authorization.",
   "author": { "name": "Coinbase" },
   "homepage": "https://docs.cdp.coinbase.com/ai-agents/coinbase-for-agents/coinbase-mcp",

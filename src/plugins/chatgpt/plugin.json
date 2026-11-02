@@ -1,19 +1,19 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "coinbase",
-  "version": "0.0.1",
-  "description": "Coinbase workflows through remote MCP. Market data, portfolios, trading, conversions, and x402; financial actions require explicit authorization.",
+  "version": "0.0.2",
+  "description": "Coinbase workflows through remote MCP. Market data, portfolios, trading, and conversions; financial actions require explicit authorization.",
   "author": { "name": "Coinbase" },
   "homepage": "https://www.coinbase.com",
   "repository": "https://github.com/coinbase/agents",
   "license": "MIT",
-  "keywords": ["coinbase", "mcp", "trading", "portfolios", "x402"],
+  "keywords": ["coinbase", "mcp", "trading", "portfolios", "crypto"],
   "extensions": {
     "com.openai": {
       "interface": {
         "displayName": "Coinbase",
         "shortDescription": "Coinbase account workflows",
-        "longDescription": "Workflows for portfolios, market data, authorized trading, conversions, and budgeted x402 research through Coinbase's remote MCP server with OAuth.",
+        "longDescription": "Workflows for portfolios, market data, authorized trading, and conversions through Coinbase's remote MCP server with OAuth.",
         "developerName": "Coinbase",
         "category": "Finance",
         "capabilities": ["Read", "Write"],
@@ -24,7 +24,11 @@
         "supportURL": "https://help.coinbase.com/en",
         "privacyPolicyURL": "https://www.coinbase.com/legal/privacy",
         "termsOfServiceURL": "https://www.coinbase.com/legal/user_agreement/united_states",
-        "defaultPrompt": ["Connect Coinbase and list my portfolios. Do not trade or spend funds."]
+        "defaultPrompt": [
+          "Give me a breakdown of my crypto and stock holdings, with each one's 7-day trend.",
+          "Help me rebalance my portfolio to new target allocations.",
+          "Help me scale into a position with limit orders at a few price levels below today's price."
+        ]
       }
     }
   }

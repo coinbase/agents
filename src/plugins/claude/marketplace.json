@@ -7,7 +7,7 @@
       "name": "coinbase",
       "source": "./",
       "description": "Shared Coinbase MCP and CLI workflows for Claude Code",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "license": "MIT"
     }
   ]
