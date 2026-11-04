@@ -285,7 +285,7 @@ If `data.tx.approve_txs` is empty (native ETH input), omit the approval call and
 }
 ```
 
-Call `send_calls("base", calls)`, then `get_request_status` only after the user acts on the approval link.
+Call `send_calls("base", calls)`, then poll `get_request_status` until it reaches a final status (see `approval-mode.md`).
 
 ---
 

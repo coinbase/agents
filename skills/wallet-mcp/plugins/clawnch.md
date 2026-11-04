@@ -298,7 +298,7 @@ Discovery + buy happy path:
 4. get_wallets → address (only if not already cached)
 5. swap (Wallet MCP) with fromAsset=ETH (or USDC), toAsset=<address>, amount=<human-readable>
 6. Open the approvalUrl
-7. get_request_status only after the user acts
+7. Poll get_request_status until it reaches a final status (approval-mode.md)
 ```
 
 Do not auto-buy. Always require an explicit "buy X amount of `<symbol>`"
@@ -414,7 +414,7 @@ too old", "sender mismatch", etc.).
 
 Three submission shapes, all on `chain: "base"` (the chain string, not the
 numeric chainId). Every write returns an `approvalUrl` + `requestId`; surface
-the URL neutrally and poll `get_request_status` only after the user acts —
+the URL neutrally and poll `get_request_status` until it reaches a final status —
 see [approval-mode.md](../references/approval-mode.md).
 
 **Buys → `swap`.** Read the `swap` tool's own parameter descriptions from the
@@ -470,7 +470,7 @@ dead address, `value: "0x0"`, amount in wei (whole tokens × 10^18).
 2. Take `tokens[0]`. Show: symbol, name, address, current price, 24h volume.
 3. Ask the user to confirm — "Buy 0.001 ETH of `<SYMBOL>` (`<address>`) at ~$<price>?".
 4. On confirmation: `swap` with `fromAsset=ETH`, `toAsset=<token.address>`, `amount="0.001"`, `chain="base"`.
-5. Open the approval URL; poll `get_request_status` once the user has approved.
+5. Open the approval URL; poll `get_request_status` until it reaches a final status.
 
 **Buy 5 USDC of CLAWNCH**
 

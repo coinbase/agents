@@ -154,7 +154,7 @@ Chain IDs: base=8453, ethereum=1, arbitrum=42161, optimism=10, polygon=137, bsc=
    - **ERC-20 tokenIn** → `[approval_call, swap_call]` — always include approval, no allowance check needed.
    - **USDT on Ethereum** — if existing allowance is non-zero, prepend a zero-approval call before the real approval.
 8. `send_calls(chain, calls)` → `approvalUrl`, `requestId`.
-9. Present `approvalUrl` to the user. Do not auto-approve. Call `get_request_status(requestId)` only after the user acts.
+9. Present `approvalUrl` to the user. Do not auto-approve. Poll `get_request_status(requestId)` until it reaches a final status (see `approval-mode.md`).
 
 ## Submission
 

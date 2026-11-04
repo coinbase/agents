@@ -136,7 +136,7 @@ Use this endpoint when the user names a token by **address** (instead of picking
 5. get_wallets → address (only if not already cached)
 6. swap (Wallet MCP) with fromAsset=ETH (or USDC), toAsset=<tokenAddress>, amount=<human-readable amount>
 7. Open the approvalUrl
-8. get_request_status only after the user acts
+8. Poll get_request_status until it reaches a final status (approval-mode.md)
 ```
 
 Do not auto-buy. Always require an explicit "buy X amount of `<symbol>`" confirmation from the user before calling `swap` — the launches feed contains low-liquidity and meme tokens, and the swap is irreversible.
@@ -187,7 +187,7 @@ The actual purchase is a regular Wallet MCP `swap` call. Read the `swap` tool's 
 - `toAsset`: use the launch token contract address.
 - `amount`: human-readable decimal amount of `fromAsset`. For 0.001 ETH pass `"0.001"`; for 5 USDC pass `"5"`.
 
-The `swap` tool returns an `approvalUrl` and `requestId` like any other write call. Surface the URL to the user neutrally ("Approve Swap"), then poll `get_request_status` once they've acted. The full approval/polling pattern is in [`../references/approval-mode.md`](../references/approval-mode.md).
+The `swap` tool returns an `approvalUrl` and `requestId` like any other write call. Surface the URL to the user neutrally ("Approve Swap"), then poll `get_request_status` until it reaches a final status (see `approval-mode.md`). The full approval/polling pattern is in [`../references/approval-mode.md`](../references/approval-mode.md).
 
 ## Example Prompts
 
@@ -202,7 +202,7 @@ The `swap` tool returns an `approvalUrl` and `requestId` like any other write ca
 2. Take `launches[0]` (or the first one matching `status="deployed"`).
 3. Show: symbol, name, address, deployer. Ask the user to confirm — "Buy 0.001 ETH of `<SYMBOL>` (`<address>`)?".
 4. On confirmation: `swap` with `fromAsset=ETH`, `toAsset=<launch.tokenAddress>`, `amount="0.001"`, `chain="base"`.
-5. Open the approval URL; poll `get_request_status` once the user has approved.
+5. Open the approval URL; poll `get_request_status` until it reaches a final status.
 
 **Buy 5 USDC of $WHOP**
 1. `web_request` GET `https://api.bankr.bot/token-launches`.

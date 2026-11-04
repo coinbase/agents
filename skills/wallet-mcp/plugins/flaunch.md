@@ -258,8 +258,8 @@ Response:
 10. Show the transaction summary and ask for explicit confirmation before calling `send_calls`.
 11. Call Wallet MCP `send_calls` with the returned `input`.
 12. Surface the approval URL as "Approve Transaction".
-13. Wait for the user to say they approved or rejected the transaction.
-14. Call Wallet MCP `get_request_status` once after the user acts and report the confirmed result.
+13. Open the approval link and poll Wallet MCP `get_request_status` without waiting for the user (see `approval-mode.md`).
+14. Report the confirmed result once the status is final.
 
 Do not submit launches silently. Do not report success until Wallet MCP request status confirms completion.
 
@@ -272,7 +272,7 @@ Do not submit launches silently. Do not report success until Wallet MCP request 
 5. Warn about low liquidity, slippage, and user-supplied metadata.
 6. On explicit confirmation, call Wallet MCP `swap` with `chain: "base"`, a funding asset such as `ETH` or `USDC`, the token contract address, and a human-readable decimal amount.
 7. Surface the approval URL as "Approve Transaction".
-8. Poll Wallet MCP request status only after the user says they acted.
+8. Poll Wallet MCP request status until it reaches a final status.
 
 ### Swap a token by contract address
 
@@ -284,7 +284,7 @@ Do not submit launches silently. Do not report success until Wallet MCP request 
 6. Warn about low liquidity and slippage. Require explicit confirmation before calling `swap`.
 7. Call Wallet MCP `swap` with `chain: "base"` and the human-readable decimal `amount`.
 8. Surface the approval URL as "Approve Transaction".
-9. Call `get_request_status` once after the user acts and report the final transaction status.
+9. Poll `get_request_status` until it reaches a final status and report it.
 
 ## Submission
 
@@ -373,7 +373,7 @@ The token contract address can come from Flaunch discovery or direct user input.
 5. Call `POST https://mcp.flaunch.gg/v1/base/launch/prepare`.
 6. Ask the user to confirm sending the returned transaction.
 7. Call Wallet MCP `send_calls` with the returned `input`.
-8. Surface the "Approve Transaction" link and poll request status only after the user acts.
+8. Surface the "Approve Transaction" link and poll request status until it reaches a final status.
 
 **Show me the newest Flaunch coins**
 
@@ -388,7 +388,7 @@ The token contract address can come from Flaunch discovery or direct user input.
 3. Warn about low liquidity and slippage.
 4. Ask the user to confirm: "Buy 0.001 ETH of <symbol> (<address>)?"
 5. On confirmation, call Wallet MCP `swap` with `fromAsset="ETH"`, `toAsset="<token contract address>"`, `amount="0.001"`, and `chain="base"`.
-6. Surface the "Approve Transaction" link and poll request status only after the user acts.
+6. Surface the "Approve Transaction" link and poll request status until it reaches a final status.
 
 **Buy a token by contract address**
 
@@ -397,7 +397,7 @@ The token contract address can come from Flaunch discovery or direct user input.
 3. Ask the user to confirm the funding asset and amount.
 4. Warn about low liquidity and slippage.
 5. Call Wallet MCP `swap`.
-6. Surface the approval URL and poll only after the user acts.
+6. Surface the approval URL and poll until it reaches a final status.
 
 ## Risks & Warnings
 

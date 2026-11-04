@@ -194,7 +194,7 @@ Extract fields by position:
 5. [RLP-decode](#rlp-decoding) each `transactions[].unsigned` hex string to extract `to`, `data`, and `value`. Map `networkId` to chain string (`8453` → `"base"`, `56` → `"bsc"`).
 6. `send_calls(chain, calls)` → `approvalUrl` + `requestId`.
 7. Present the approval URL as an "Approve Transaction" link to the returned `approvalUrl`. In CLI harnesses, also auto-open the link. Do not approve on the user's behalf.
-8. After the user confirms approval, call `get_request_status(requestId)` once.
+8. Poll `get_request_status(requestId)` until it reaches a final status (see `approval-mode.md`).
 
 ### Permit2 swap (Base only)
 

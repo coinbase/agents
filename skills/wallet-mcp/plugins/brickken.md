@@ -147,7 +147,7 @@ Ownership transfer is separate from `agentSetWallet`. After transfer, Brickken's
 3. Require a scalar `txId` and exactly one transaction. Preserve `to`, `data`, and `value` exactly.
 4. Validate that the quote network matches the operation network and that the payer holds the exact quoted asset. On Base Sepolia require Circle USDC `0x036CbD53842c5426634e7929541eC2318f3dCF7e`. Parse the exact decimal from `extra.displayPrice` as `maxPayment`.
 5. Call Wallet MCP `initiate_x402_request` with method `POST`, the active Brickken environment's `/send-transactions` resource, the prepared body, and `maxPayment`. Do not switch environments between prepare and send.
-6. Show the approval URL. Poll Wallet MCP `get_request_status` only after the user acts, then call `complete_x402_request(requestId)`.
+6. Show the approval URL. Poll Wallet MCP `get_request_status` until it completes, then call `complete_x402_request(requestId)`.
 7. Report confirmed only when Brickken returns `status: "confirmed"` and a transaction hash.
 8. On `status: "pending"`, use Brickken `get_transaction_status` through exposed MCP tools or hosted HTTP API, or `brickken tx status`. Do not resubmit or pay the same `txId` again. Brickken's reconciliation settles after confirmation or releases on revert/authorization expiry.
 9. To transfer an identity to the Coinbase Wallet Account, call Wallet MCP `get_wallets`, prepare `agentTransferOwnership` with that address as `newOwner`, and run a separate x402 approval.

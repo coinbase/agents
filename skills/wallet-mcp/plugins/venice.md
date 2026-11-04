@@ -163,7 +163,7 @@ Requires `SIGN-IN-WITH-X` for the same wallet. Use to inspect ledger entries suc
 2. Create or obtain the current Venice SIWX/SIWE message. Prefer `siwxChallenge` returned by a Venice `402` response when available.
 3. Call Wallet MCP `sign` with `type: "personal_sign"` and the exact message string.
 4. Present the approval link as "Approve Sign-In" and follow `../references/approval-mode.md`.
-5. Poll Wallet MCP request status after the user approves and extract the signature.
+5. Poll Wallet MCP request status until it completes and extract the signature.
 6. Build `SIGN-IN-WITH-X` as base64 JSON containing the wallet address, exact signed message, signature, current timestamp, and Base chain identity.
 7. Check `GET /x402/balance/{walletAddress}`. If `canConsume` is false or the balance is too low, run the top-up flow before inference.
 8. Call the desired Venice endpoint with `SIGN-IN-WITH-X`.
@@ -174,7 +174,7 @@ Requires `SIGN-IN-WITH-X` for the same wallet. Use to inspect ledger entries suc
 2. Call `POST /x402/top-up` without `X-402-Payment` to retrieve the current `accepts` array.
 3. Select the returned Base USDC payment option, matching `network` to Base / `eip155:8453` and `asset` to the returned USDC asset.
 4. Use the Wallet MCP x402 payment tool advertised in the MCP catalog to pay exactly the returned `amount`, `payTo`, `asset`, `network`, and x402 version/metadata. If no such Wallet MCP payment tool is exposed, stop and ask the user to top up through Venice or switch to an API key.
-5. Show the Wallet MCP approval URL as "Approve Transaction" and poll status only after the user confirms approval.
+5. Show the Wallet MCP approval URL as "Approve Transaction" and poll status until it reaches a final status.
 6. Confirm the top-up by calling `GET /x402/balance/{walletAddress}` with a fresh `SIGN-IN-WITH-X` header.
 
 ## Submission
@@ -201,7 +201,7 @@ Do not use `send_calls` to hand-roll x402 payments unless the Wallet MCP tool ca
 1. Run `get_wallets` and prepare a fresh `SIGN-IN-WITH-X` header through Wallet MCP `sign`.
 2. Call `POST /x402/top-up` to get the current payment requirements.
 3. Select the Base USDC option and pay it through the Wallet MCP x402 payment tool.
-4. Show the approval link, poll after approval, then verify with `GET /x402/balance/{walletAddress}`.
+4. Show the approval link, poll until it reaches a final status, then verify with `GET /x402/balance/{walletAddress}`.
 
 **Use my Base wallet to ask Venice `zai-org-glm-5-1` a question**
 

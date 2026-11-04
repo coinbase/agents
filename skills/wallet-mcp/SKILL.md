@@ -1,6 +1,6 @@
 ---
 title: "Wallet MCP Skill"
-description: "Wallet MCP — gives your AI assistant access to a Coinbase Wallet Account via the Wallet MCP server (wallet-mcp.coinbase.com). Wallet, portfolio, sending, swapping, signing, x402 payments, batched contract calls, and transaction history across Base, Ethereum, Arbitrum, Optimism, Polygon, BNB Chain, Avalanche, and Robinhood Chain."
+description: "Wallet MCP — gives your AI assistant access to a Coinbase Wallet Account via the Wallet MCP server (wallet-mcp.coinbase.com). Wallet, portfolio, sending, swapping, signing, x402 payments, batched contract calls, and transaction history across Base, Ethereum, Arbitrum, Optimism, Polygon, BNB Chain, Avalanche, and Robinhood Chain, plus balances, transaction history, sending, swapping, and receiving funds on Solana."
 name: wallet-mcp
 version: 0.1.0
 ---
@@ -22,7 +22,7 @@ If Wallet MCP tools are available, load [references/tone.md](references/tone.md)
 
 Keep it short. Do this once per session, before doing real work:
 
-1. **Briefly mention what's available** — one or two sentences. The user has a Coinbase Wallet Account and can do things like check balances, send and swap tokens, sign messages, make x402 payments, and batch contract calls on Base (the default chain) and other supported chains, and (if installed) use third-party plugins for DeFi, swaps, and other onchain actions. Do not enumerate every tool — the agent discovers tools and plugins directly from the MCP.
+1. **Briefly mention what's available** — one or two sentences. The user has a Coinbase Wallet Account and can do things like check balances, send and swap tokens, sign messages, make x402 payments, and batch contract calls on Base (the default chain) and other supported chains (on Solana: balances, history, sending, swapping, and receiving), and (if installed) use third-party plugins for DeFi, swaps, and other onchain actions. Do not enumerate every tool — the agent discovers tools and plugins directly from the MCP.
 
 2. **Show this disclaimer verbatim** before proceeding:
 
@@ -44,9 +44,16 @@ Wallet MCP tools take a `chain` parameter. **Base is the default chain** — use
 | BNB Chain | `bsc` |
 | Avalanche | `avalanche` |
 | Robinhood Chain | `robinhood-chain` |
+| Solana | `solana` |
 | Base Sepolia (testnet) | `base-sepolia` |
 
-Not every tool covers every chain: x402 payments run on Base and Base Sepolia only, and `swap` is mainnet-only. The tool descriptions exposed by the MCP remain the source of truth for the current set and per-tool limits. Individual plugins may support only a subset of these chains — check the plugin's notice before acting.
+Not every tool covers every chain: x402 payments run on Base and Base Sepolia only, `swap` is mainnet-only, and Solana covers reads, sends, swaps, and receiving only (below). The tool descriptions exposed by the MCP remain the source of truth for the current set and per-tool limits. Individual plugins may support only a subset of these chains — check the plugin's notice before acting.
+
+**Solana.** `get_portfolio`, `get_transaction_history`, `search_tokens`, `chain_rpc_request` (read-only Solana methods), `fund` (a Solana Pay link for USDC or SOL), `send`, and `swap` accept `chain: solana`. `fund` on Solana works only while Solana funding is enabled on the server, and `send` / `swap` only while Solana writes are enabled; the tool descriptions say which. If a call says Solana isn't enabled yet, tell the user and don't retry. Solana addresses are base58 and case-sensitive: pass them exactly as returned. `get_wallets` lists the Base Account's Solana address as `baseAccount.solana`, and each agent wallet's as its `solana` field. The Base Account only has one if the user approved Wallet MCP, after Solana support shipped, from a keys.coinbase.com session that uses Base auth. If it's missing, Base Account Solana calls fail with a "no Solana address" error: ask the user to reconnect Wallet MCP once, then call `get_wallets` again. If it's still missing, Solana isn't available for the Base Account yet; don't keep asking. Reads and `fund` still work for an agent wallet's Solana address, and `search_tokens` and `chain_rpc_request` on Solana work without any address.
+
+- **Send and swap on Solana** work in approval mode on Solana mainnet, from the Base Account's Solana address. Assets are `SOL`, `USDC`, or a base58 SPL mint address. Any other mint needs `decimals` (or `fromDecimals` / `toDecimals` for a swap); SOL and USDC don't, and a conflicting value is rejected. The `send` recipient must be a base58 Solana address: names (ENS, basenames, cb.id) aren't resolved on Solana. The user approves in their Coinbase Wallet Account (tool responses call it the Base Account), which prepares the transaction when they open the link, so the quote, network fees, and final amounts show there, not in the tool response. Don't quote fees or a swap rate the tool didn't return. If it can't be prepared (for example the balance doesn't cover amount and fees, or a swap has no route), the user sees why there.
+- **Confirming a Solana send or swap.** After approval, `get_request_status` returns `signed`, which means the user approved and it's being sent, not that it landed. A declined request stays `pending` until it expires. Confirm the outcome by matching the transaction in `get_transaction_history` on `chain: solana`, and never start the same send or swap again while the outcome is unknown. The full polling and matching rules, including what `solanaState` means, are in [references/approval-mode.md](references/approval-mode.md).
+- **Not on Solana yet:** `sign` (message signing), `send_calls`, and x402 payments. In headless sessions, Solana reads work for the session's agent wallet, but `send` and `swap` don't. Never route a Solana signature or batched call through them, and tell the user it isn't supported yet.
 
 ## Tools
 

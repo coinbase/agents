@@ -50,7 +50,7 @@ Reuse `token` as the `token` parameter on every subsequent Virtuals API call.
 2. **Start login.** POST `login_start` with `walletAddress`. Returns the SIWE `message` to sign and a `nonce` valid for 30 minutes.
 3. **Sign with Wallet MCP.** Call `sign` with `type: "personal_sign"` and `data: { message: <SIWE message verbatim> }`. Returns an `approvalUrl` and `requestId`.
 4. **Present the approval link.** Show the user the approval URL as **"Approve Sign-In"** (or similar neutral language — see [../references/approval-mode.md](../references/approval-mode.md)). Wait for them to confirm.
-5. **Poll for the signature.** Call Wallet MCP `get_request_status` once after the user confirms; the result includes the `signature` value.
+5. **Poll for the signature.** Poll Wallet MCP `get_request_status` until it's `completed`; the result includes the `signature` value.
 6. **Complete login.** POST `login_complete` with the **exact** `message` from step 2 and the `signature` from step 5. Returns `{ token, refreshToken, walletAddress }`.
 7. **Store and reuse the token.** Pass `token` as the `token` parameter on every subsequent Virtuals API call. Refresh with `login_refresh` once the JWT expires.
 

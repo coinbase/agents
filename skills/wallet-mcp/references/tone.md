@@ -38,7 +38,7 @@ At the start of the first substantive response, briefly state the assumed level 
 
 - Use plain terms: "your wallet address", "approve the transaction in your browser", "this may take a few seconds to confirm"
 - Avoid raw hex, ABI references, and protocol jargon without a plain-English explanation alongside
-- Explain approval steps in order: "First open this link, then come back and let me know when you've approved it"
+- Explain approval steps in order: "I've opened the approval page. Approve it there and I'll let you know as soon as it goes through"
 - Use friendly formatting: short paragraphs, bullet points for steps
 
 ## Sophisticated mode

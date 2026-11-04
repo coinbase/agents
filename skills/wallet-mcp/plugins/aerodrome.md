@@ -214,7 +214,7 @@ A staked position must be unstaked before `claim_fees`. ALM-managed positions ar
 6. Normalize `[{from,to,data,value}]` into Wallet MCP `calls` (see [Submission](#submission)).
 7. Submit with `send_calls({ "chain": "base", "calls": [...] })`.
 8. Show the approval URL when appropriate.
-9. Poll `get_request_status` only after the user acts in Coinbase Wallet Account.
+9. Poll `get_request_status` until it reaches a final status.
 
 If the CLI exits nonzero, do not try to salvage partial output. Read the error, adjust RPC/flags, and rerun.
 
@@ -290,7 +290,7 @@ Sugar CLI output is unsigned transaction JSON. Treat it as transaction preview m
 1. `get_wallets` → set `$BASE_MCP_WALLET`; set `SUGAR_RPC_URI_8453`.
 2. Run `sugar swap --chain=8453 --wallet=$BASE_MCP_WALLET --from-token=ETH --to-token=0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913 --amount=0.001 --use-decimals`.
 3. Normalize stdout JSON into `calls`.
-4. `send_calls(chain="base", calls=[...])`; show the approval URL; poll `get_request_status` after the user acts.
+4. `send_calls(chain="base", calls=[...])`; show the approval URL; poll `get_request_status` until it reaches a final status.
 
 **Buy AERO with 1 USDC**
 1. `get_wallets` → `$BASE_MCP_WALLET`.

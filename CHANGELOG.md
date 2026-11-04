@@ -6,6 +6,8 @@
 - Let a distribution omit selected skill files and drop source lines marked `<!-- omit: <distribution> -->`. Other distributions still copy skills unchanged, and links to unselected skills or omitted files fail the build.
 - Remove x402 from the ChatGPT listing copy and keywords, and replace its starter prompt with three prompts for portfolio review, rebalancing, and scaling in with limit orders.
 - Describe paid research in the `coinbase-mcp` skill description without naming x402.
+- Document Solana in the `wallet-mcp` skill: `get_portfolio`, `get_transaction_history`, `search_tokens`, `chain_rpc_request`, `fund` (Solana Pay), `send` and `swap` accept `chain: solana`, with `fund`, `send` and `swap` gated by server switches; `sign`, `send_calls` and x402 do not, and headless sessions get Solana reads only. Solana sends and swaps are approved in the user's Base Account, which shows the quote and fees; confirm the outcome by matching the transaction in `get_transaction_history` on `chain: solana` after `get_request_status` returns `signed`. Add `solana` to the supported-chains table and note that only sessions approved from a Base auth keys.coinbase.com session carry `baseAccount.solana`, while agent wallets carry their own Solana address.
+- Rework the `wallet-mcp` approval flow: in CLI harnesses, auto-open only the Wallet MCP `approvalUrl`, passed as one quoted argument, then poll `get_request_status` on a backoff without waiting for the user. Name the real statuses, keep polling EVM `signed` until `completed` or `failed`, report a signature for `sign`, and add Solana matching and stop rules. Align `tone.md` and the plugins that said to poll only after the user acts.
 - Bump every distribution to 0.0.2.
 
 ## 0.0.1 — Unreleased

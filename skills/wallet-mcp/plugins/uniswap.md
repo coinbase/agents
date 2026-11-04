@@ -363,7 +363,7 @@ For V2 create, `/lp/check_approval` may return multiple approval transactions. B
 5. web_request POST /swap with x-permit2-disabled
 6. send_calls("base", approval + swap calls if approval exists, otherwise swap only)
 7. Open the approvalUrl if requested; do not approve unless the user explicitly asks
-8. get_request_status only after the user acts
+8. Poll get_request_status until it reaches a final status (approval-mode.md)
 ```
 
 ### LP orchestration
@@ -376,12 +376,12 @@ For V2 create, `/lp/check_approval` may return multiple approval transactions. B
 5. web_request POST /lp/create, /lp/increase, /lp/decrease, /lp/claim_fees, or /lp/create_classic
 6. send_calls("base", approval calls + operation call)
 7. Open the approvalUrl if requested; do not approve unless the user explicitly asks
-8. get_request_status only after the user acts
+8. Poll get_request_status until it reaches a final status (approval-mode.md)
 ```
 
 ## Submission
 
-Target tool: **`send_calls`** (chain `"base"`). Open the returned `approvalUrl` only if the user asks, and poll `get_request_status` after they act (see [../references/approval-mode.md](../references/approval-mode.md) and [../references/batch-calls.md](../references/batch-calls.md)).
+Target tool: **`send_calls`** (chain `"base"`). Open the returned `approvalUrl` and poll `get_request_status` until it reaches a final status (see [../references/approval-mode.md](../references/approval-mode.md) and [../references/batch-calls.md](../references/batch-calls.md)).
 
 ### Swap send_calls
 

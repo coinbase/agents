@@ -225,7 +225,7 @@ For a **native-ETH** input (`wethIsEth: true`), omit the approval call(s) and pa
 - **`value`** — hex wei. The SDK returns a bigint; convert (`"0x" + value.toString(16)`), or `0x0` when zero.
 - **`chain`** — map the SDK `chainId` to the Wallet MCP chain string: `8453 → base`, `1 → ethereum`, `42161 → arbitrum`, `10 → optimism`, `43114 → avalanche`.
 
-Then follow the standard approval flow ([../references/approval-mode.md](../references/approval-mode.md)): present the returned URL as **"Approve Transaction"**, auto-open it in the shell harness, then poll `get_request_status` once after the user confirms.
+Then follow the standard approval flow ([../references/approval-mode.md](../references/approval-mode.md)): present the returned URL as **"Approve Transaction"**, auto-open it in the shell harness, then poll `get_request_status` until it reaches a final status.
 
 ## Example Prompts
 
