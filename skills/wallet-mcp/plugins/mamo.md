@@ -21,7 +21,7 @@ risk: [slippage, irreversible]
 # Mamo Plugin
 
 > [!IMPORTANT]
-> Run Wallet MCP onboarding first (see `SKILL.md`). This plugin needs the Mamo MCP connected (see `## Detection`). Mamo is a third-party protocol, not operated by Coinbase Wallet. Tokenized stocks are offered only to eligible persons outside the US, and Mamo's Terms of Service apply, including section 7 (Tokenized Securities): https://docs.mamo.bot/legal/terms-of-service.
+> Run Wallet MCP onboarding first (see `SKILL.md`). This plugin needs the Mamo MCP connected (see `## Detection`). Mamo is a third-party protocol, not operated by Coinbase Wallet. Tokenized stocks are offered only to eligible persons outside the US, and Mamo's Terms of Service apply, including section 7 (Tokenized Securities): https://mamo.bot/docs/mamo-tos.pdf.
 
 ## Overview
 
