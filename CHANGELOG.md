@@ -2,6 +2,7 @@
 
 ## 0.0.2 — Unreleased
 
+- Explain in the `coinbase-mcp` portfolios reference how to fund a perpetuals (`INTX`) portfolio with `coinbase_transfer`: find the `INTX` portfolio, convert USD to USDC when needed, transfer once, verify, and never split or retry a refused transfer. List `INTX` as a `portfolio_type` value.
 - Ship only the shared router and `coinbase-mcp` in the ChatGPT distribution. Omit `coinbase-mcp/references/x402.md`, because `/mcp/chatgpt` does not expose x402 tools, and give ChatGPT its own package README.
 - Let a distribution omit selected skill files and drop source lines marked `<!-- omit: <distribution> -->`. Other distributions still copy skills unchanged, and links to unselected skills or omitted files fail the build.
 - Remove x402 from the ChatGPT listing copy and keywords, and replace its starter prompt with three prompts for portfolio review, rebalancing, and scaling in with limit orders.

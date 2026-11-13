@@ -45,7 +45,7 @@ Read the applicable guide before planning or executing a workflow; setup alone d
 | Guide | Workflow |
 | --- | --- |
 | [Market data](references/market-data.md) | Products, prices, books, candles, and fees |
-| [Portfolios](references/portfolios.md) | Balances, portfolio management, and internal transfers |
+| [Portfolios](references/portfolios.md) | Balances, portfolio management, internal transfers, and funding a perpetuals (`INTX`) portfolio |
 | [Trading](references/trading.md) | Preview, submit, verify, edit, and cancel orders |
 | [Conversions](references/convert.md) | Quote, approve, and execute currency conversions |
 | [Equities](references/equities.md) | Eligible stocks, sessions, and whole-share constraints; also read Trading |
