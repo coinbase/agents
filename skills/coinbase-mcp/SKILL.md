@@ -34,6 +34,7 @@ Client registration, Coinbase client approval, user consent, OAuth scopes, and p
 - Follow response pagination; use only fields supported by that tool, not those of a similarly named CLI command.
 - These skills target the core remote tool contract. A client-specific adapter may replace tools with confirmation-card flows. If discovery/server instructions require a signed confirmation token or widget action, use that client flow; do not synthesize tokens or call widget-only financial tools directly.
 - Write gates, feature flags, OAuth grants, and product eligibility can reject a discoverable tool. Preserve the denial; it is not a reason to switch credentials or bypass the selected client.
+- The user can set spend limits and an automatic stop that pauses the app. Where exposed, `coinbase_agent_controls_get` reads them before an order or payment (see [Trading](references/trading.md)). A spend-limit or paused refusal is the user's control: report it and do not split or reroute the action to get around it; a smaller order needs the user's fresh approval.
 - For 401, use native refresh/reconnect; for missing scopes, request consent. Do not silently use CLI credentials.
 - For 429, honor `Retry-After` and use bounded backoff. For unknown write outcomes, use authorized state reads and the original supported idempotency identifier; stop if unresolved.
 - Remote MCP can chain multiple calls but does not expose the CLI's WebSocket watch/stream flags. Do not invent a subscription or replace one with tight polling.

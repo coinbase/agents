@@ -2,6 +2,7 @@
 
 ## 0.0.2 — Unreleased
 
+- Add guidance for `coinbase_agent_controls_get` in `coinbase-mcp`: read the user's spend limits and pause status before previewing an order or paying for research, treat an `unknown` pause as possibly paused, and never work around a spend-limit or paused refusal. The guidance applies only where the server exposes the tool.
 - Ship only the shared router and `coinbase-mcp` in the ChatGPT distribution. Omit `coinbase-mcp/references/x402.md`, because `/mcp/chatgpt` does not expose x402 tools, and give ChatGPT its own package README.
 - Let a distribution omit selected skill files and drop source lines marked `<!-- omit: <distribution> -->`. Other distributions still copy skills unchanged, and links to unselected skills or omitted files fail the build.
 - Remove x402 from the ChatGPT listing copy and keywords, and replace its starter prompt with three prompts for portfolio review, rebalancing, and scaling in with limit orders.
