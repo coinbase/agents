@@ -3,7 +3,7 @@ title: "QHooks Plugin"
 description: "Read QHooks markets and stored token safety checks; prepare wallet-approved calls through QHooks MCP and Wallet MCP send_calls."
 tags: [trading, token-launches, discovery, perps, agent-commerce]
 name: qhooks
-version: 0.1.0
+version: 0.1.1
 integration: external-mcp
 chains: [base, ethereum, arbitrum, bsc, robinhood-chain]
 requires:
@@ -77,10 +77,95 @@ This plugin uses the external-MCP path, not the HTTP fallback. See [custom-plugi
 
 Target: **Wallet MCP `send_calls`**, using its advertised parameter schema and the EIP-5792 mapping in [batch-calls.md](../references/batch-calls.md). No QHooks tool signs or broadcasts. Do not replace this route with Wallet MCP's semantic `swap`, which would lose the original QHooks plan and fee/referral terms.
 
-Extract the selected QHooks tool result from `structuredContent`; stop if the MCP result has `isError`. The example below accepts the spot/OTC `transactions` shape and agreement `txs` shape. It preserves order, discards transaction-envelope fields, checks actor/chain consistency, derives a missing envelope chain only from consistent explicit transaction chain IDs, and converts only exact integer strings or safe integers to hex wei. It does not execute anything. Inspect the tool's current result before using it; an unfamiliar shape stops rather than guessing.
+Extract the selected QHooks tool result from `structuredContent`; stop if the MCP result has `isError`. Retain `{tool, arguments}` from the original preparation call as `intent`; do not reconstruct it from the response. The example below accepts the spot/OTC `transactions` shape and agreement `txs` shape. It preserves order, discards transaction-envelope fields, checks actor/chain consistency, derives a missing envelope chain only from consistent explicit transaction chain IDs, and converts only exact integer strings or safe integers to hex wei. Spot plans must carry the new per-transaction chain IDs and `qhooks.trade-plan.v1` integrity metadata; older responses fail closed until the corresponding QHooks server release. The unsigned SHA-256 digest detects modification and is not a server signature or trusted price source. The independent decoder checks the requested token, side, amount, quote-derived minimum/slippage, account, manager, fee, referrer, expiry and native value; exact approvals target only the pinned fee router. The supported route is a single-hop swap with empty hook data, optionally preceded by one exact-amount approval. Unknown selectors, Permit2 execution and extra wallet-operation fields stop. Output is paid to `msg.sender`, so there is no invented trader ABI argument. The OTC/agreement branch retains its prior staged review and simulation rules; this spot validator does not replace their contract-specific review. It does not execute anything. Inspect the tool's current result before using it; an unfamiliar shape stops rather than guessing.
 
 ```javascript
-function qhooksCalls(plan, walletAddress, nowSeconds = Math.floor(Date.now() / 1000)) {
+const qhooksCalls = (() => {
+const policies = {
+  "1": {manager:"0x000000000004444c5dc75cb358380d2e3de08a90"},
+  "8453": {manager:"0x498581ff718922c3f8e6a244956af099b2652b2b"},
+  "42161": {manager:"0x360e68faccca8ca495c1b759fd9eee466db9fb32"},
+  "56": {manager:"0x28e2ea090877bf75740558f6bfb36a5ffee9e9df"},
+  "4663": {manager:"0x8366a39cc670b4001a1121b8f6a443a643e40951"}
+};
+for (const policy of Object.values(policies)) Object.assign(policy, {
+  feeRouter:"0x79d211f5137d22b0fe3bfda81fbb8b7f53248bff",
+  permit2:"0x000000000022d473030f116ddee9f6b43ac78ba3"
+});
+const ZERO = '0x' + '0'.repeat(40);
+const ADDRESS = /^0x[0-9a-f]{40}$/i, HEX = /^0x(?:[0-9a-f]{2})*$/i;
+const UINT = /^(0|[1-9][0-9]*)$/, U128 = 1n << 128n;
+const fail = () => { throw new Error('QHooks unsigned plan does not match the request.'); };
+const addr = value => typeof value === 'string' && ADDRESS.test(value) ? value.toLowerCase() : fail();
+function uint(value, limit = 1n << 256n) {
+  if (typeof value !== 'string' || !UINT.test(value) || value.length > 78) fail();
+  const n = BigInt(value); if (n >= limit) fail(); return n;
+}
+function valueOf(value) {
+  if (typeof value !== 'string' || !/^(?:0x[0-9a-f]+|0|[1-9][0-9]*)$/i.test(value) || value.length > 78) fail();
+  const n = BigInt(value); if (n >= 1n << 256n) fail(); return n;
+}
+function words(data, selector, count) {
+  if (typeof data !== 'string' || !HEX.test(data) || data.slice(0, 10).toLowerCase() !== selector || data.length !== 10 + count * 64) fail();
+  return Array.from({ length: count }, (_, i) => data.slice(10 + i * 64, 74 + i * 64).toLowerCase());
+}
+const wordAddress = word => /^0{24}[0-9a-f]{40}$/.test(word) ? '0x' + word.slice(24) : fail();
+const number = word => BigInt('0x' + word);
+function signed24(word) {
+  let n = number(word); if (n >= 1n << 255n) n -= 1n << 256n;
+  if (n < -(1n << 23n) || n >= 1n << 23n) fail(); return n;
+}
+
+// Shared server format. A digest detects accidental modification; it is NOT a
+// server signature or a substitute for the independent request/ABI checks below.
+async function qhooksTradeHash(plan) {
+  const tuple = ['qhooks.trade-plan.v1', String(plan.chainId), addr(plan.trader),
+    plan.transactions.map(tx => [String(tx.chainId), addr(tx.to), tx.data.toLowerCase(), valueOf(tx.value).toString(), tx.from === undefined ? null : addr(tx.from)])];
+  if (!globalThis.crypto?.subtle) fail();
+  const digest = await globalThis.crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(tuple)));
+  return '0x' + Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function qhooksValidateTrade(plan, input, walletAddress, nowSeconds) {
+  const chain = String(input.chain), policy = policies[chain]; if (!policy) fail();
+  const now = nowSeconds * 1000, trader = addr(input.trader), token = addr(input.token);
+  if (trader !== addr(walletAddress)) fail();
+  const amount = uint(input.amountIn, U128), slippage = input.slippageBps ?? 100;
+  if (amount === 0n || !['buy', 'sell'].includes(input.side) || !Number.isInteger(slippage) || slippage < 0 || slippage > 9999) fail();
+  if (!plan || String(plan.chainId) !== chain || String(plan.chain) !== chain || addr(plan.trader) !== trader || addr(plan.token) !== token || plan.side !== input.side || plan.amountIn !== input.amountIn || plan.slippageBps !== slippage) fail();
+  const minimum = uint(plan.minOut, U128), inputCurrency = addr(plan.inputCurrency), feeOnInput = input.side === 'buy';
+  const q = plan.quote;
+  if (!q || String(q.chainId) !== chain || addr(q.trader) !== trader || typeof q.zeroForOne !== 'boolean' || q.routerFeeBps !== 100 || q.source !== 'V4Quoter') fail();
+  const gross = uint(q.grossAmountOut, U128), net = uint(q.netAmountOut, U128);
+  if (minimum === 0n || gross === 0n || net !== gross - (feeOnInput ? 0n : gross * 100n / 10000n) || minimum !== net * BigInt(10000 - slippage) / 10000n || uint(q.amountOut, U128) !== gross || uint(q.amountIn, U128) !== amount - (feeOnInput ? amount * 100n / 10000n : 0n)) fail();
+  if (!Number.isSafeInteger(plan.deadline) || !Number.isFinite(now) || plan.deadline <= Math.floor(now / 1000) || plan.deadline > Math.floor(now / 1000) + 660) fail();
+  const txs = plan.transactions;
+  if (!Array.isArray(txs) || txs.length < 1 || txs.length > 2) fail();
+  const allowed = new Set([inputCurrency, policy.feeRouter, policy.permit2]);
+  for (const tx of txs) {
+    if (!tx || Object.keys(tx).some(k => !['chainId', 'to', 'data', 'value', 'from'].includes(k)) || String(tx.chainId) !== chain || !allowed.has(addr(tx.to)) || tx.from !== undefined && addr(tx.from) !== trader || typeof tx.data !== 'string' || !HEX.test(tx.data)) fail();
+    valueOf(tx.value);
+  }
+  if (txs.length === 2) {
+    const approve = txs[0], w = words(approve.data, '0x095ea7b3', 2);
+    if (inputCurrency === ZERO || addr(approve.to) !== inputCurrency || wordAddress(w[0]) !== policy.feeRouter || number(w[1]) !== amount || valueOf(approve.value) !== 0n) fail();
+  }
+  const swap = txs.at(-1), w = words(swap.data, '0xf5ec7c4b', 19);
+  // Fixed canonical layout: nine top-level words, one dynamic hop, empty hookData.
+  if (addr(swap.to) !== policy.feeRouter || wordAddress(w[0]) !== policy.manager || number(w[1]) !== 288n || number(w[2]) !== amount || number(w[3]) !== minimum || wordAddress(w[4]) !== ZERO || number(w[5]) !== (feeOnInput ? 1n : 0n) || number(w[6]) !== 100n || number(w[7]) !== BigInt(plan.deadline) || wordAddress(w[8]) !== addr(input.referrer ?? ZERO) || number(w[9]) !== 1n || number(w[10]) !== 32n || number(w[13]) >= 1n << 24n || signed24(w[14]) <= 0n || number(w[16]) !== (q.zeroForOne ? 1n : 0n) || number(w[17]) !== 224n || number(w[18]) !== 0n) fail();
+  const currency0 = wordAddress(w[11]), currency1 = wordAddress(w[12]); wordAddress(w[15]);
+  const [currencyIn, currencyOut] = q.zeroForOne ? [currency0, currency1] : [currency1, currency0];
+  if (BigInt(currency0) >= BigInt(currency1) || currencyIn !== inputCurrency || (feeOnInput ? currencyOut !== token : currencyIn !== token) || valueOf(swap.value) !== (inputCurrency === ZERO ? amount : 0n)) fail();
+  // swap() returns output to msg.sender; it has no trader/recipient calldata field.
+  // plan.trader, quote.trader and any tx.from are bound to the actual Oak account.
+  if (plan.integrity?.schema !== 'qhooks.trade-plan.v1' || plan.integrity.algorithm !== 'sha256' || !/^0x[0-9a-f]{64}$/.test(plan.integrity.hash || '') || (await qhooksTradeHash(plan)) !== plan.integrity.hash) fail();
+  return plan;
+}
+
+async function qhooksCalls(plan, intent, walletAddress, nowSeconds = Math.floor(Date.now() / 1000)) {
+  const supported = new Set(["prepare_trade", "otc_create", "otc_accept", "deal_status", "agreement_create", "agreement_fund", "agreement_attest", "agreement_release", "agreement_refund", "agreement_status", "agreement_from_template"]);
+  if (!intent || !supported.has(intent.tool) || !intent.arguments || typeof intent.arguments !== "object" || Array.isArray(intent.arguments)) throw Error("Keep the original tool name and arguments before preparing.");
+  const requested = intent.arguments;
   const chains = {"1":"ethereum", "8453":"base", "42161":"arbitrum", "56":"bsc", "4663":"robinhood-chain"};
   const address = v => typeof v === "string" && /^0x[0-9a-f]{40}$/i.test(v) && !/^0x0{40}$/i.test(v);
   const fail = () => { throw Error("Unsupported or inconsistent QHooks plan; re-read and review."); };
@@ -91,8 +176,13 @@ function qhooksCalls(plan, walletAddress, nowSeconds = Math.floor(Date.now() / 1
   if (plan.transactions !== undefined && plan.txs !== undefined) fail();
   const txs = plan.transactions ?? plan.txs;
   if (!Array.isArray(txs) || !txs.length || txs.length > 16) fail();
+  if (intent.tool === "prepare_trade") await qhooksValidateTrade(plan, requested, walletAddress, nowSeconds);
+  // OTC/agreements retain their existing staged review/simulation flow on RH.
+  // A remote response cannot select this branch in place of a requested trade.
+  else if (String(requested.chain ?? "4663") !== "4663") fail();
   const envelopeChain = plan.chainId ?? plan.chain;
   const id = String(envelopeChain ?? txs[0]?.chainId), chain = chains[id];
+  if (id !== String(requested.chain ?? "4663")) fail();
   if (!chain || plan.chain !== undefined && plan.chainId !== undefined && String(plan.chain) !== id) fail();
   if (envelopeChain === undefined && txs.some(tx => String(tx?.chainId) !== id)) fail();
   const calls = txs.map(tx => {
@@ -108,9 +198,11 @@ function qhooksCalls(plan, walletAddress, nowSeconds = Math.floor(Date.now() / 1
   });
   return {chain, calls};
 }
+return qhooksCalls;
+})();
 ```
 
-Pass the returned `{chain,calls}` as the input to `send_calls` only after step 4's review and explicit user confirmation. Use the currently connected wallet on that chain; a matching address alone does not establish chain support. Preserve approvals before actions, including a complete simulated batch when the server actually supplies one. A partially staged approval remains staged. `unfunded_creation_prepared` creates an OTC deal without a deposit; never report it as funded or settled. A status read can return `nextActions`: only after the user selects a specific action, use its non-null `transaction` with `simulation.ok: true`, wrapped as `{status:"prepared", unsigned:true, transactions:[selected.transaction]}`. Never auto-pick an action or infer a missing chain. Perps typed data and launch links have no transaction array and are not convertible by this helper.
+Call `await qhooksCalls(plan, intent, walletAddress)`. Pass the returned `{chain,calls}` as the input to `send_calls` only after step 4's review and explicit user confirmation. Use the currently connected wallet on that chain; a matching address alone does not establish chain support. Preserve approvals before actions, including a complete simulated batch when the server actually supplies one. A partially staged approval remains staged. `unfunded_creation_prepared` creates an OTC deal without a deposit; never report it as funded or settled. A status read can return `nextActions`: only after the user selects a specific action, use its non-null `transaction` with `simulation.ok: true`, wrapped as `{status:"prepared", unsigned:true, transactions:[selected.transaction]}`. Never auto-pick an action or infer a missing chain. Perps typed data and launch links have no transaction array and are not convertible by this helper.
 
 ## Example Prompts
 
