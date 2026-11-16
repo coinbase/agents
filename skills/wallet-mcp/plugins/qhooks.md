@@ -77,7 +77,7 @@ This plugin uses the external-MCP path, not the HTTP fallback. See [custom-plugi
 
 Target: **Wallet MCP `send_calls`**, using its advertised parameter schema and the EIP-5792 mapping in [batch-calls.md](../references/batch-calls.md). No QHooks tool signs or broadcasts. Do not replace this route with Wallet MCP's semantic `swap`, which would lose the original QHooks plan and fee/referral terms.
 
-Extract the selected QHooks tool result from `structuredContent`; stop if the MCP result has `isError`. The example below accepts the spot/OTC `transactions` shape and agreement `txs` shape. It preserves order, discards transaction-envelope fields, checks actor/chain consistency, and converts only exact integer strings or safe integers to hex wei. It does not execute anything. Inspect the tool's current result before using it; an unfamiliar shape stops rather than guessing.
+Extract the selected QHooks tool result from `structuredContent`; stop if the MCP result has `isError`. The example below accepts the spot/OTC `transactions` shape and agreement `txs` shape. It preserves order, discards transaction-envelope fields, checks actor/chain consistency, derives a missing envelope chain only from consistent explicit transaction chain IDs, and converts only exact integer strings or safe integers to hex wei. It does not execute anything. Inspect the tool's current result before using it; an unfamiliar shape stops rather than guessing.
 
 ```javascript
 function qhooksCalls(plan, walletAddress, nowSeconds = Math.floor(Date.now() / 1000)) {
@@ -85,16 +85,18 @@ function qhooksCalls(plan, walletAddress, nowSeconds = Math.floor(Date.now() / 1
   const address = v => typeof v === "string" && /^0x[0-9a-f]{40}$/i.test(v) && !/^0x0{40}$/i.test(v);
   const fail = () => { throw Error("Unsupported or inconsistent QHooks plan; re-read and review."); };
   if (!plan || plan.ok === false || plan.isError || plan.unsigned === false || !address(walletAddress)) fail();
-  if (plan.status !== undefined && !["prepared", "approval_required"].includes(plan.status)) fail();
+  if (plan.status !== undefined && !["prepared", "approval_required", "unfunded_creation_prepared"].includes(plan.status)) fail();
   for (const actor of [plan.trader, plan.payer, plan.actor]) if (actor !== undefined && (!address(actor) || actor.toLowerCase() !== walletAddress.toLowerCase())) fail();
-  const id = String(plan.chainId ?? plan.chain), chain = chains[id];
-  if (!chain || plan.chain !== undefined && plan.chainId !== undefined && String(plan.chain) !== id) fail();
   if (plan.deadline !== undefined && (!Number.isSafeInteger(plan.deadline) || plan.deadline <= nowSeconds)) fail();
   if (plan.transactions !== undefined && plan.txs !== undefined) fail();
   const txs = plan.transactions ?? plan.txs;
   if (!Array.isArray(txs) || !txs.length || txs.length > 16) fail();
+  const envelopeChain = plan.chainId ?? plan.chain;
+  const id = String(envelopeChain ?? txs[0]?.chainId), chain = chains[id];
+  if (!chain || plan.chain !== undefined && plan.chainId !== undefined && String(plan.chain) !== id) fail();
+  if (envelopeChain === undefined && txs.some(tx => String(tx?.chainId) !== id)) fail();
   const calls = txs.map(tx => {
-    if (!tx || !address(tx.to) || tx.chainId !== undefined && String(tx.chainId) !== id) fail();
+    if (!tx || !address(tx.to) || tx.simulation?.ok === false || tx.chainId !== undefined && String(tx.chainId) !== id) fail();
     const from = tx.from ?? plan.trader ?? plan.payer ?? plan.actor;
     if (!address(from) || from.toLowerCase() !== walletAddress.toLowerCase()) fail();
     if (typeof tx.data !== "string" || !/^0x(?:[0-9a-f]{2})*$/i.test(tx.data)) fail();
@@ -108,7 +110,7 @@ function qhooksCalls(plan, walletAddress, nowSeconds = Math.floor(Date.now() / 1
 }
 ```
 
-Pass the returned `{chain,calls}` as the input to `send_calls` only after step 4's review and explicit user confirmation. Use the currently connected wallet on that chain; a matching address alone does not establish chain support. Preserve approvals before actions, including a complete simulated batch when the server actually supplies one. A partially staged approval remains staged. Perps typed data and launch links have no transaction array and are not convertible by this helper.
+Pass the returned `{chain,calls}` as the input to `send_calls` only after step 4's review and explicit user confirmation. Use the currently connected wallet on that chain; a matching address alone does not establish chain support. Preserve approvals before actions, including a complete simulated batch when the server actually supplies one. A partially staged approval remains staged. `unfunded_creation_prepared` creates an OTC deal without a deposit; never report it as funded or settled. A status read can return `nextActions`: only after the user selects a specific action, use its non-null `transaction` with `simulation.ok: true`, wrapped as `{status:"prepared", unsigned:true, transactions:[selected.transaction]}`. Never auto-pick an action or infer a missing chain. Perps typed data and launch links have no transaction array and are not convertible by this helper.
 
 ## Example Prompts
 
