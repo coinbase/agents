@@ -77,10 +77,432 @@ This plugin uses the external-MCP path, not the HTTP fallback. See [custom-plugi
 
 Target: **Wallet MCP `send_calls`**, using its advertised parameter schema and the EIP-5792 mapping in [batch-calls.md](../references/batch-calls.md). No QHooks tool signs or broadcasts. Do not replace this route with Wallet MCP's semantic `swap`, which would lose the original QHooks plan and fee/referral terms.
 
-Extract the selected QHooks tool result from `structuredContent`; stop if the MCP result has `isError`. Retain `{tool, arguments}` from the original preparation call as `intent`; do not reconstruct it from the response. The example below accepts the spot/OTC `transactions` shape and agreement `txs` shape. It preserves order, discards transaction-envelope fields, checks actor/chain consistency, derives a missing envelope chain only from consistent explicit transaction chain IDs, and converts only exact integer strings or safe integers to hex wei. Spot plans must carry the new per-transaction chain IDs and `qhooks.trade-plan.v1` integrity metadata; older responses fail closed until the corresponding QHooks server release. The unsigned SHA-256 digest detects modification and is not a server signature or trusted price source. The independent decoder checks the requested token, side, amount, quote-derived minimum/slippage, account, manager, fee, referrer, expiry and native value; exact approvals target only the pinned fee router. The supported route is a single-hop swap with empty hook data, optionally preceded by one exact-amount approval. Unknown selectors, Permit2 execution and extra wallet-operation fields stop. Output is paid to `msg.sender`, so there is no invented trader ABI argument. The OTC/agreement branch retains its prior staged review and simulation rules; this spot validator does not replace their contract-specific review. It does not execute anything. Inspect the tool's current result before using it; an unfamiliar shape stops rather than guessing.
+Extract the selected QHooks tool result from `structuredContent`; stop if the MCP result has `isError`. Retain `{tool, arguments}` from the original preparation call as `intent`; do not reconstruct it from the response. The example below accepts the spot/OTC `transactions` shape and agreement `txs` shape. It preserves order, discards transaction-envelope fields, checks actor/chain consistency, derives a missing envelope chain only from consistent explicit transaction chain IDs, and converts only exact integer strings or safe integers to hex wei. Spot plans must carry the new per-transaction chain IDs and `qhooks.trade-plan.v1` integrity metadata; older responses fail closed until the corresponding QHooks server release. The unsigned SHA-256 digest detects modification and is not a server signature or trusted price source. The independent decoder checks the requested token, side, amount, quote-derived minimum/slippage, account, manager, fee, referrer, expiry and native value; exact approvals target only the pinned fee router. The supported route is a single-hop swap with empty hook data, optionally preceded by one exact-amount approval. Unknown selectors, Permit2 execution and extra wallet-operation fields stop. Output is paid to `msg.sender`, so there is no invented trader ABI argument. The RH OTC/agreement branch pins the escrow/agreement target, actor, exact approval token/spender/amount, native value and supported selectors. It retains staged review and simulation; conditions and counterparty consent still require wallet review. The final `readQHooks` argument must be a trusted host function that invokes the already-connected QHooks MCP read tool and returns its decoded result. The mapper itself supplies the read arguments. It fetches token_info and then an independent quote from the original input; never substitute plan.quote or a model-supplied evidence object. OTC accept independently reads deal_status; custom agreement assets need independently returned decimals. Missing/refused/unknown reads stop the flow. This is not an HTTP fallback and adds no signer. It does not execute anything. Inspect the tool's current result before using it; an unfamiliar shape stops rather than guessing.
 
 ```javascript
 const qhooksCalls = (() => {
+const QHOOKS_SECURITY = (() => {
+    const Z = `0x${"0".repeat(40)}`;
+    const OTC = "0xbea24499f82f1e018a4dff5607b7c54141cbfbf8";
+    const AGREEMENT = "0x9b6e579dd876c364bf232d2958d7cc45937809bf";
+    const WETH = "0x0bd7d308f8e1639fab988df18a8011f41eacad73";
+    const USDG = "0x5fc5360d0400a0fd4f2af552add042d716f1d168";
+    const U128 = 1n << 128n;
+    const fail = () => {
+        throw Error("Independent QHooks plan validation failed.");
+    };
+    const row = (v) => v !== null && typeof v === "object" && !Array.isArray(v)
+        ? v
+        : fail();
+    const addr = (v) => typeof v === "string" && /^0x[0-9a-f]{40}$/i.test(v)
+        ? v.toLowerCase()
+        : fail();
+    const integer = (v, limit = U128) => {
+        if (typeof v !== "string" || !/^(0|[1-9][0-9]*)$/.test(v) || v.length > 78)
+            fail();
+        const n = BigInt(v);
+        return n < limit ? n : fail();
+    };
+    const val = (v) => {
+        if (typeof v !== "string" ||
+            !/^(?:0x[0-9a-f]+|0|[1-9][0-9]*)$/i.test(v) ||
+            v.length > 78)
+            fail();
+        const n = BigInt(v);
+        return n < 1n << 256n ? n : fail();
+    };
+    const array = (v, max) => Array.isArray(v) && v.length > 0 && v.length <= max ? v : fail();
+    const asset = (v) => v === "ETH" ? Z : v === "WETH" ? WETH : v === "USDG" ? USDG : addr(v);
+    const word = (data, i) => data.slice(10 + i * 64, 74 + i * 64);
+    const wa = (v) => /^0{24}[0-9a-f]{40}$/.test(v) ? `0x${v.slice(24)}` : fail();
+    const wn = (v) => /^[0-9a-f]{64}$/.test(v) ? BigInt(`0x${v}`) : fail();
+    /**
+     * Select the same listed pool as prepare_trade using a separate token_info response.
+     *
+     * @param input - Original caller arguments.
+     * @param value - Independent token metadata.
+     * @returns Canonical pool key and exact quote arguments.
+     */
+    function marketFor(input, value) {
+        const meta = row(row(value).meta);
+        const token = addr(input.token);
+        const chain = String(input.chain);
+        if (String(meta.chainId) !== chain || addr(meta.token) !== token)
+            fail();
+        const pools = array(meta.pools, 100).map(row);
+        const p = pools.find((p) => p.label === "launch") ?? pools[0];
+        const k = row(p.key);
+        const id = p.id ?? p.poolId;
+        if (typeof id !== "string" ||
+            !/^0x[0-9a-f]{64}$/i.test(id) ||
+            !Number.isSafeInteger(k.fee) ||
+            Number(k.fee) < 0 ||
+            Number(k.fee) >= 2 ** 24 ||
+            !Number.isSafeInteger(k.tickSpacing) ||
+            Number(k.tickSpacing) <= 0 ||
+            Number(k.tickSpacing) >= 2 ** 23)
+            fail();
+        const c0 = addr(k.currency0);
+        const c1 = addr(k.currency1);
+        const hooks = addr(k.hooks);
+        if (BigInt(c0) >= BigInt(c1) ||
+            ![c0, c1].includes(token) ||
+            !["buy", "sell"].includes(String(input.side)))
+            fail();
+        const direction = input.side === "buy" ? c1 === token : c0 === token;
+        const amount = integer(input.amountIn);
+        const quoted = amount - (input.side === "buy" ? (amount * 100n) / 10000n : 0n);
+        if (amount === 0n || quoted === 0n)
+            fail();
+        return {
+            chainId: chain,
+            poolId: id.toLowerCase(),
+            currency0: c0,
+            currency1: c1,
+            hooks,
+            fee: Number(k.fee),
+            tickSpacing: Number(k.tickSpacing),
+            zeroForOne: direction,
+            amountIn: quoted.toString(),
+            trader: addr(input.trader),
+        };
+    }
+    /**
+     * Read pool identity and quote independently of the transaction plan.
+     *
+     * @param original - Original caller arguments.
+     * @param read - Trusted client transport for read-only tools.
+     * @returns Independent market identity and raw pool quote.
+     */
+    async function readTrade(original, read) {
+        const input = row(original);
+        const market = await read("token_info", {
+            chain: input.chain,
+            token: input.token,
+        });
+        const key = marketFor(input, market);
+        const quote = await read("quote", {
+            chain: key.chainId,
+            pool: key.poolId,
+            zeroForOne: key.zeroForOne,
+            amountIn: key.amountIn,
+            trader: key.trader,
+        });
+        return { key, quote };
+    }
+    /**
+     * Bind decoded calldata and its minimum to independent market evidence.
+     *
+     * @param planValue - Returned unsigned plan.
+     * @param inputValue - Original caller arguments.
+     * @param decoded - Pool key decoded from swap calldata.
+     * @param evidenceValue - Result of the separate client reads.
+     * Throws before a plan can reach the wallet on any mismatch.
+     */
+    function checkTrade(planValue, inputValue, decoded, evidenceValue) {
+        const p = row(planValue);
+        const input = row(inputValue);
+        const d = row(decoded);
+        const e = row(evidenceValue);
+        const k = row(e.key);
+        const q = row(e.quote);
+        const pq = row(p.quote);
+        if (String(k.chainId) !== String(input.chain) ||
+            addr(k.trader) !== addr(input.trader) ||
+            String(q.chainId) !== String(input.chain) ||
+            q.poolId !== k.poolId ||
+            pq.poolId !== k.poolId ||
+            q.zeroForOne !== k.zeroForOne ||
+            pq.zeroForOne !== k.zeroForOne ||
+            q.amountIn !== k.amountIn ||
+            addr(q.trader) !== addr(input.trader))
+            fail();
+        for (const name of ["currency0", "currency1", "hooks"])
+            if (addr(d[name]) !== addr(k[name]))
+                fail();
+        if (d.fee !== k.fee || d.tickSpacing !== k.tickSpacing)
+            fail();
+        if (q.stale === true ||
+            q.refreshing === true ||
+            q.state === "not_checked" ||
+            q.partial === true)
+            fail();
+        const gross = integer(q.amountOut);
+        const net = gross - (input.side === "sell" ? (gross * 100n) / 10000n : 0n);
+        const s = input.slippageBps ?? 100;
+        if (typeof s !== "number" ||
+            !Number.isInteger(s) ||
+            s < 0 ||
+            s > 9999 ||
+            gross === 0n ||
+            integer(p.minOut) < (net * BigInt(10000 - s)) / 10000n)
+            fail();
+    }
+    /**
+     * Convert an original human amount without floating point or guessed precision.
+     *
+     * @param value - Original decimal string.
+     * @param decimals - Verified asset precision.
+     * @returns Positive exact raw amount.
+     */
+    function decimal(value, decimals) {
+        if (typeof value !== "string" ||
+            value.length > 80 ||
+            !/^(0|[1-9][0-9]*)(\.[0-9]+)?$/.test(value))
+            fail();
+        const [a, b = ""] = value.split(".");
+        if (b.length > decimals)
+            fail();
+        const n = BigInt(a) * 10n ** BigInt(decimals) +
+            BigInt((b + "0".repeat(decimals)).slice(0, decimals) || "0");
+        return n > 0n && n < U128 ? n : fail();
+    }
+    /**
+     * Derive RH contract targets and funding amounts from original intent.
+     *
+     * @param tool - Requested preparation or selected status action.
+     * @param original - Original caller arguments.
+     * @param read - Trusted client transport for deal or asset metadata.
+     * @returns Locally bounded contract intent, never values taken from plan transactions.
+     */
+    async function contractIntent(tool, original, read) {
+        const input = row(original);
+        if (String(input.chain ?? "4663") !== "4663")
+            fail();
+        const otc = tool.startsWith("otc_") || tool === "deal_status";
+        const contract = otc ? OTC : AGREEMENT;
+        const create = [
+            "agreement_create",
+            "agreement_fund",
+            "agreement_from_template",
+        ].includes(tool);
+        const actor = addr(create ? input.payer : input.actor);
+        if (actor === Z)
+            fail();
+        let selectedAsset = null;
+        let amount = 0n;
+        let native = 0n;
+        let source = {};
+        let selectors = [];
+        if (tool === "otc_create" || tool === "otc_accept") {
+            if (tool === "otc_create")
+                source = row(input.quote);
+            else {
+                const state = row(await read("deal_status", {
+                    chain: "4663",
+                    dealId: input.dealId,
+                    actor,
+                }));
+                if (state.termsHash !== input.expectedTermsHash ||
+                    String(state.dealId) !== String(input.dealId))
+                    fail();
+                source = row(state.deal);
+            }
+            const buyer = addr(source.buyer);
+            const seller = addr(source.seller);
+            if (![buyer, seller].includes(actor) ||
+                (tool === "otc_create" && actor !== buyer))
+                fail();
+            const funding = tool === "otc_accept" || input.fundNow === true;
+            selectedAsset = addr(actor === buyer ? source.payAsset : source.sellToken);
+            amount = funding
+                ? integer(actor === buyer ? source.payAmount : source.sellAmount)
+                : 0n;
+            if (![Z, WETH, USDG].includes(addr(source.payAsset)))
+                fail();
+            native = selectedAsset === Z ? amount : 0n;
+            selectors =
+                tool === "otc_create"
+                    ? ["0xc4e30b79"]
+                    : [actor === buyer ? "0x8b11a927" : "0x3c9a5e94"];
+        }
+        else if (create) {
+            selectedAsset = asset(input.asset);
+            let dec = selectedAsset === USDG ? 6 : 18;
+            if (![Z, WETH, USDG].includes(selectedAsset)) {
+                const meta = row(row(await read("token_info", { chain: "4663", token: selectedAsset }))
+                    .meta);
+                if (String(meta.chainId) !== "4663" ||
+                    addr(meta.token) !== selectedAsset ||
+                    !Number.isSafeInteger(meta.decimals) ||
+                    Number(meta.decimals) < 0 ||
+                    Number(meta.decimals) > 36)
+                    fail();
+                dec = Number(meta.decimals);
+            }
+            let amounts = [];
+            if (tool !== "agreement_from_template")
+                amounts = array(input.tranches, 10).map((x) => row(x).amount);
+            else {
+                const params = row(input.params);
+                if (input.template === "milestones")
+                    amounts = array(params.milestones, 10).map((x) => row(x).amount);
+                else if (input.template === "time_release" &&
+                    params.schedule !== undefined)
+                    amounts = array(params.schedule, 10).map((x) => row(x).amount);
+                else if (["arbiter_escrow", "time_release", "optimistic", "panel"].includes(String(input.template)))
+                    amounts = [params.amount];
+                else
+                    fail();
+            }
+            amount = amounts.reduce((n, v) => n + decimal(v, dec), 0n);
+            if (amount >= U128)
+                fail();
+            native = selectedAsset === Z ? amount : 0n;
+            source = input;
+            selectors = ["0xbd18467a"];
+        }
+        else if (tool === "agreement_attest")
+            selectors = ["0xa3bb24cc"];
+        else if (tool === "agreement_release")
+            selectors = ["0x366a4120"];
+        else if (tool === "agreement_refund")
+            selectors = ["0x278ecde1"];
+        else if (tool === "agreement_status")
+            selectors = [
+                "0x40e58ee5",
+                "0x6581e3ea",
+                "0x15ca8746",
+                "0xac30e880",
+                "0x366a4120",
+                "0x278ecde1",
+                "0xa3bb24cc",
+                "0x51cff8d9",
+            ];
+        else if (tool === "deal_status")
+            selectors = [
+                "0x40e58ee5",
+                "0x68d0cf17",
+                "0x1402b17a",
+                "0xe60e1301",
+                "0x51cff8d9",
+            ];
+        else
+            fail();
+        return {
+            tool,
+            contract,
+            actor,
+            asset: selectedAsset,
+            amount,
+            native,
+            source,
+            selectors,
+        };
+    }
+    /**
+     * Reject unpinned contract calls, approvals and native value before wallet review.
+     *
+     * @param value - Returned unsigned transaction plan.
+     * @param original - Original caller arguments.
+     * @param c - Independently derived local contract intent.
+     * Throws on unexpected targets, amounts, actions or chain. See README for semantic review limits.
+     */
+    function checkContract(value, original, c) {
+        const p = row(value);
+        const input = row(original);
+        const txs = array(p.transactions ?? p.txs, 2).map(row);
+        if (!["prepared", "approval_required", "unfunded_creation_prepared"].includes(String(p.status)) ||
+            p.unsigned !== true ||
+            (p.escrow !== undefined && addr(p.escrow) !== c.contract) ||
+            (p.chainId === undefined &&
+                p.chain === undefined &&
+                txs.some((t) => String(t.chainId) !== "4663")) ||
+            (p.transactions !== undefined && p.txs !== undefined) ||
+            String(input.chain ?? "4663") !== "4663" ||
+            (p.chainId !== undefined && String(p.chainId) !== "4663") ||
+            (p.chain !== undefined && String(p.chain) !== "4663") ||
+            p.ok === false ||
+            p.error)
+            fail();
+        for (const a of [p.actor, p.payer, p.trader])
+            if (a !== undefined && addr(a) !== c.actor)
+                fail();
+        let approvals = 0;
+        let actions = 0;
+        for (const [i, t] of txs.entries()) {
+            if (Object.keys(t).some((k) => ![
+                "chainId",
+                "to",
+                "from",
+                "data",
+                "value",
+                "label",
+                "simulation",
+            ].includes(k)) ||
+                (t.chainId !== undefined && String(t.chainId) !== "4663") ||
+                addr(t.from ?? p.actor ?? p.payer ?? p.trader) !== c.actor ||
+                typeof t.data !== "string" ||
+                !/^0x(?:[0-9a-f]{2})+$/i.test(t.data) ||
+                row(t.simulation ?? {}).ok === false)
+                fail();
+            const to = addr(t.to);
+            const data = t.data.toLowerCase();
+            const sel = data.slice(0, 10);
+            const v = val(t.value ?? "0");
+            if (sel === "0x095ea7b3") {
+                if (i !== 0 ||
+                    ++approvals !== 1 ||
+                    c.amount === 0n ||
+                    c.asset === null ||
+                    c.asset === Z ||
+                    to !== c.asset ||
+                    data.length !== 138 ||
+                    wa(word(data, 0)) !== c.contract ||
+                    wn(word(data, 1)) !== c.amount ||
+                    v !== 0n)
+                    fail();
+            }
+            else {
+                if (++actions !== 1 ||
+                    i !== txs.length - 1 ||
+                    to !== c.contract ||
+                    !c.selectors.includes(sel) ||
+                    v !== c.native)
+                    fail();
+                if (sel === "0xc4e30b79") {
+                    const q = c.source;
+                    if (data.length !== 522 ||
+                        wa(word(data, 0)) !== addr(q.seller) ||
+                        wa(word(data, 1)) !== addr(q.sellToken) ||
+                        wn(word(data, 2)) !== integer(q.sellAmount) ||
+                        wa(word(data, 3)) !== addr(q.payAsset) ||
+                        wn(word(data, 4)) !== integer(q.payAmount) ||
+                        wn(word(data, 5)) !== integer(String(q.expiry)) ||
+                        wn(word(data, 6)) !== integer(String(q.feeBps)) ||
+                        wn(word(data, 7)) !== (input.fundNow === true ? 1n : 0n))
+                        fail();
+                }
+                else if (sel === "0xbd18467a") {
+                    if (data.length < 394 ||
+                        wa(word(data, 0)) !== addr(input.payee) ||
+                        wa(word(data, 1)) !== c.asset ||
+                        wn(word(data, 2)) !== c.amount ||
+                        (input.expiry !== undefined &&
+                            wn(word(data, 3)) !== BigInt(String(input.expiry))))
+                        fail();
+                }
+                else if (sel !== "0x51cff8d9") {
+                    const id = input.dealId ?? input.id;
+                    if (wn(word(data, 0)) !== integer(id))
+                        fail();
+                    if (["0xa3bb24cc", "0x366a4120"].includes(sel) &&
+                        wn(word(data, 1)) !== BigInt(String(input.tranche ?? 0)))
+                        fail();
+                    if (sel === "0x3c9a5e94" &&
+                        wa(word(data, 1)) !== addr(input.payout ?? c.source.payout))
+                        fail();
+                }
+            }
+        }
+        if (p.status === "approval_required"
+            ? approvals !== 1 || actions !== 0
+            : actions !== 1)
+            fail();
+    }
+    return { readTrade, checkTrade, contractIntent, checkContract };
+})();
+
 const policies = {
   "1": {manager:"0x000000000004444c5dc75cb358380d2e3de08a90"},
   "8453": {manager:"0x498581ff718922c3f8e6a244956af099b2652b2b"},
@@ -126,7 +548,7 @@ async function qhooksTradeHash(plan) {
   return '0x' + Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join('');
 }
 
-async function qhooksValidateTrade(plan, input, walletAddress, nowSeconds) {
+async function qhooksValidateTrade(plan, input, walletAddress, nowSeconds, evidence) {
   const chain = String(input.chain), policy = policies[chain]; if (!policy) fail();
   const now = nowSeconds * 1000, trader = addr(input.trader), token = addr(input.token);
   if (trader !== addr(walletAddress)) fail();
@@ -156,16 +578,17 @@ async function qhooksValidateTrade(plan, input, walletAddress, nowSeconds) {
   const currency0 = wordAddress(w[11]), currency1 = wordAddress(w[12]); wordAddress(w[15]);
   const [currencyIn, currencyOut] = q.zeroForOne ? [currency0, currency1] : [currency1, currency0];
   if (BigInt(currency0) >= BigInt(currency1) || currencyIn !== inputCurrency || (feeOnInput ? currencyOut !== token : currencyIn !== token) || valueOf(swap.value) !== (inputCurrency === ZERO ? amount : 0n)) fail();
+  QHOOKS_SECURITY.checkTrade(plan,input,{currency0,currency1,fee:Number(number(w[13])),tickSpacing:Number(signed24(w[14])),hooks:wordAddress(w[15])},evidence);
   // swap() returns output to msg.sender; it has no trader/recipient calldata field.
   // plan.trader, quote.trader and any tx.from are bound to the actual Oak account.
   if (plan.integrity?.schema !== 'qhooks.trade-plan.v1' || plan.integrity.algorithm !== 'sha256' || !/^0x[0-9a-f]{64}$/.test(plan.integrity.hash || '') || (await qhooksTradeHash(plan)) !== plan.integrity.hash) fail();
   return plan;
 }
 
-async function qhooksCalls(plan, intent, walletAddress, nowSeconds = Math.floor(Date.now() / 1000)) {
+async function qhooksCalls(plan, intent, walletAddress, nowSeconds = Math.floor(Date.now() / 1000), readQHooks) {
   const supported = new Set(["prepare_trade", "otc_create", "otc_accept", "deal_status", "agreement_create", "agreement_fund", "agreement_attest", "agreement_release", "agreement_refund", "agreement_status", "agreement_from_template"]);
   if (!intent || !supported.has(intent.tool) || !intent.arguments || typeof intent.arguments !== "object" || Array.isArray(intent.arguments)) throw Error("Keep the original tool name and arguments before preparing.");
-  const requested = intent.arguments;
+  const requested = {...intent.arguments,chain:String(intent.arguments.chain??"4663")};
   const chains = {"1":"ethereum", "8453":"base", "42161":"arbitrum", "56":"bsc", "4663":"robinhood-chain"};
   const address = v => typeof v === "string" && /^0x[0-9a-f]{40}$/i.test(v) && !/^0x0{40}$/i.test(v);
   const fail = () => { throw Error("Unsupported or inconsistent QHooks plan; re-read and review."); };
@@ -176,10 +599,18 @@ async function qhooksCalls(plan, intent, walletAddress, nowSeconds = Math.floor(
   if (plan.transactions !== undefined && plan.txs !== undefined) fail();
   const txs = plan.transactions ?? plan.txs;
   if (!Array.isArray(txs) || !txs.length || txs.length > 16) fail();
-  if (intent.tool === "prepare_trade") await qhooksValidateTrade(plan, requested, walletAddress, nowSeconds);
+  if (typeof readQHooks !== "function") fail();
+  if (intent.tool === "prepare_trade") {
+    const evidence=await QHOOKS_SECURITY.readTrade(requested,readQHooks);
+    await qhooksValidateTrade(plan, requested, walletAddress, nowSeconds,evidence);
+  }
   // OTC/agreements retain their existing staged review/simulation flow on RH.
   // A remote response cannot select this branch in place of a requested trade.
-  else if (String(requested.chain ?? "4663") !== "4663") fail();
+  else {
+    const contractInput={...requested,actor:requested.actor??walletAddress};
+    const expected=await QHOOKS_SECURITY.contractIntent(intent.tool,contractInput,readQHooks);
+    QHOOKS_SECURITY.checkContract(plan,contractInput,expected);
+  }
   const envelopeChain = plan.chainId ?? plan.chain;
   const id = String(envelopeChain ?? txs[0]?.chainId), chain = chains[id];
   if (id !== String(requested.chain ?? "4663")) fail();
@@ -220,3 +651,13 @@ Call `await qhooksCalls(plan, intent, walletAddress)`. Pass the returned `{chain
 ## Notes
 
 QHooks service flags, rate limits and tool schemas remain authoritative. A 429 means honor Retry-After; unavailable data is not zero. Current usage limits and fee terms are documented at `https://qhooks.com/skill.md`. Market reads can cover more networks than this Wallet MCP transaction intersection: Monad, Elysium and Solana do not become supported `send_calls` chains merely because QHooks lists them. This spec requires no paid API, subscription or facilitator. Onchain gas and the fee disclosed in a user-approved plan still apply.
+
+## Independent plan checks
+
+Before a spot plan is returned, the adapter separately reads `token_info` and `quote` through the same configured public transport. It selects the listed launch pool (otherwise the first listed pool), binds the decoded currencies, hook, fee and tick spacing to that independent metadata, and computes the minimum from the independent raw quote, the original slippage and the router fee. Changing both the returned plan quote and its minimum, even with a recomputed digest, is refused. Missing or stale independent quote evidence stops preparation; there is no wallet call or automatic retry. This adds two bounded read calls per spot preparation.
+
+The SHA-256 integrity value detects inconsistency; it is not a server signature or a price guarantee. Independent reads must come from the adapter's own transport, never model-supplied evidence or fields copied from the plan. Wallet review and signing remain outside the adapter.
+
+OTC and agreement transaction plans are limited to Robinhood Chain (4663). Their only contract destinations are QOtcEscrow `0xbea24499f82f1e018a4dff5607b7c54141cbfbf8` and QAgreements `0x9b6e579dd876c364bf232d2958d7cc45937809bf`, respectively. A separate approval can target only the original funding token, with the exact original amount and the relevant contract as spender; unlimited approvals, other spenders, extra native value and extra wallet-operation fields are refused. OTC acceptance reads the selected deal and its terms hash independently. Agreement amounts use known asset decimals or independently returned token metadata, never guessed precision.
+
+These checks bound destinations, funding amounts and supported action selectors. They do not authenticate a server or replace review of agreement conditions, expiry and counterparty terms. Unavailable/non-plan records are data, not executable calls.
