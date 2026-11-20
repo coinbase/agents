@@ -5,6 +5,7 @@ First follow [Coinbase MCP setup and safety](../SKILL.md). Use only Coinbase MCP
 ## Plan, preview, authorize, submit, verify
 
 1. Discover the exact product, intended portfolio, available funds/positions, current size/price limits, and supported order fields. Honor the requested quote currency; never substitute BTC-USD for BTC-USDC. Ask if the currency or portfolio is ambiguous.
+   If the server exposes `coinbase_agent_controls_get`, read the user's agent controls before previewing. If `pause_status` is `yes`, stop and tell the user to resume the app; do not try other order types or products. Treat `unknown` as possibly paused, not as `no`. Compare the planned order with each `order` limit: `max` for `per_order`, and `remaining` for `rolling`. A snapshot can go stale and does not authorize the order; it can still be refused when submitted. An empty `limits` list does not mean trading is allowed.
 2. Establish product, side, size and units, portfolio, order type, price/trigger, time in force, expiry, and applicable session. Resolve relative prices from current data and confirm the absolute value.
 3. Preview supported orders and disclose estimated fees, price/slippage, and relevant risk. Preview is not authorization. If a required preview is unavailable, stop; never create an order to test it. Load [equities](equities.md) or [futures](futures.md) before planning those products.
 4. Obtain approval for the complete order. Generate and retain a unique `client_order_id` before submission; never reuse it for a different logical order. Keep it available if the response is lost.
@@ -30,6 +31,7 @@ No CLI or API key is needed. Discover current schemas and the host's actual name
 | Step | Core tools |
 | --- | --- |
 | Resolve scope, funds, and product | `coinbase_portfolios_list`, `coinbase_portfolios_get`, `coinbase_balance`, `coinbase_products_list`, `coinbase_products_get` |
+| Check the user's spend limits and pause status, where exposed | `coinbase_agent_controls_get` |
 | Estimate a new order | `coinbase_orders_preview` |
 | Submit an approved order | `coinbase_orders_create` |
 | Verify order and fills | `coinbase_orders_get`, `coinbase_orders_list`, `coinbase_orders_fills` |
