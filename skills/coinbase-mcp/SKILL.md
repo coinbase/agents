@@ -50,7 +50,7 @@ Read the applicable guide before planning or executing a workflow; setup alone d
 | [Trading](references/trading.md) | Preview, submit, verify, edit, and cancel orders |
 | [Conversions](references/convert.md) | Quote, approve, and execute currency conversions |
 | [Equities](references/equities.md) | Eligible stocks, sessions, and whole-share constraints; also read Trading |
-| [Futures](references/futures.md) | Eligible CFM dated futures and margin risk; also read Trading |
+| [Futures](references/futures.md) | US CFM and eligible international dated futures; also read Trading |
 | [x402 research](references/x402.md) | Discover and pay for curated research within an approved budget <!-- omit: chatgpt --> |
 
 ## Monitoring limits

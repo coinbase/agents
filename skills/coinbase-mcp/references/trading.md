@@ -8,7 +8,7 @@ First follow [Coinbase MCP setup and safety](../SKILL.md). Use only Coinbase MCP
    If the server exposes `coinbase_agent_controls_get`, read the user's agent controls before previewing. If `pause_status` is `yes`, stop and tell the user to resume the app; do not try other order types or products. Treat `unknown` as possibly paused, not as `no`. Compare the planned order with each `order` limit: `max` for `per_order`, and `remaining` for `rolling`. A snapshot can go stale and does not authorize the order; it can still be refused when submitted. An empty `limits` list does not mean trading is allowed.
 2. Establish product, side, size and units, portfolio, order type, price/trigger, time in force, expiry, and applicable session. Resolve relative prices from current data and confirm the absolute value.
 3. Preview supported orders and disclose estimated fees, price/slippage, and relevant risk. Preview is not authorization. If a required preview is unavailable, stop; never create an order to test it. Load [equities](equities.md) or [futures](futures.md) before planning those products.
-4. Obtain approval for the complete order. Generate and retain a unique `client_order_id` before submission; never reuse it for a different logical order. Keep it available if the response is lost.
+4. Obtain approval for the complete order. Generate and retain a unique `client_order_id` before submission when the product supports it. Never reuse it for a different logical order. Do not supply it for `GLOBAL_*` orders.
 5. Submit once using the Coinbase MCP and current schema. For spot market buys use `quote_size`; for spot market sells use `base_size`, not both. Other order types and asset classes have their own sizing rules; preserve decimal precision.
 6. Inspect order state and fills. Acceptance/order ID is not a fill. Report open, filled, partially filled, rejected/failed, or canceled only as established by the response. Do not claim a future fill for a resting order or poll indefinitely.
 
@@ -44,7 +44,7 @@ Pass structured fields from each tool's own schema, including the intended `port
 Concrete field differences in the audited core schema:
 - Fills filtering is `order_ids` (an array of strings), not singular `order_id`; `product_ids` on fills/list is a comma-separated string.
 - Edit-preview requires `order_id` and at least one positive `base_size` or `limit_price`. It does not accept attached-exit fields.
-- Close-position requires `client_order_id` and `product_id`; `size` is optional and omission means full close. It exposes no `portfolio_id`, so do not claim arbitrary portfolio targeting or add that field. Stop if intended scope is unresolved.
+- Close-position requires `product_id`; `size` is optional and omission means full close. For `GLOBAL_*`, use the discovered `product_type` and authorized `global_portfolio_id`; do not supply `client_order_id`. Other product classes require `client_order_id` and do not take `portfolio_id`. Stop if intended scope is unresolved.
 - Current create and preview both expose `portfolio_id`, `time_in_force`, and `end_time`; older deployments or client adapters may differ. Use discovered schemas, not CLI flag syntax or a stale template.
 
 If a client adapter uses confirmation cards/tokens for order placement, editing, or cancellation, follow that flow. A conversational approval is not a substitute for a required widget confirmation token.

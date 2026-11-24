@@ -4,7 +4,7 @@ First follow [Coinbase MCP setup and safety](../SKILL.md). Use only Coinbase MCP
 
 ## Read and select
 
-List accessible portfolios, discover real UUIDs, and inspect the intended portfolio and available balances. Distinguish total holdings, available funds, cash, and returned spot/equity/futures positions. Follow pagination. Never derive a portfolio ID from a user ID or silently use the default portfolio when another was requested. Portfolio types are `DEFAULT` (the primary portfolio), `CONSUMER` (the Coinbase app), and `INTX` (Global Derivatives, the collateral portfolio for perpetual futures).
+List accessible portfolios, discover real UUIDs, and inspect the intended portfolio and available balances. Distinguish total holdings, available funds, cash, and returned spot/equity/futures positions. Follow pagination. Never derive a portfolio ID from a user ID or silently use the default portfolio when another was requested. Portfolio types are `DEFAULT` (the primary portfolio), `CONSUMER` (the Coinbase app), and `INTX` (Global Derivatives, the collateral portfolio for international futures).
 
 ## Manage
 
@@ -27,7 +27,7 @@ Perpetual futures (`GLOBAL_PERP`) draw collateral from the user's portfolio of t
 
 Limits: Coinbase enforces per-request limits on transfers and conversions, and the tool schemas may state a ceiling. If a request is refused for its amount, report the refusal and ask the user how to proceed. Do not split it into several transfers or retry.
 
-Dated futures (`FUTURE`) are different: there is no transfer step. USD in the default portfolio already counts toward their buying power, so a USDC holder converts USDC to USD instead; see [futures](futures.md).
+US dated futures (`FUTURE`) are different: there is no transfer step. USD in the default portfolio already counts toward their buying power, so a USDC holder converts USDC to USD instead; see [futures](futures.md). International dated futures (`GLOBAL_FUTURE`) use an authorized Global Derivatives portfolio; do not apply the US funding workflow.
 
 ## MCP execution
 
