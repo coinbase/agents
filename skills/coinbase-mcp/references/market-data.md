@@ -25,7 +25,7 @@ Discover schemas and host namespaces first.
 
 Use the current schema for product identifiers, time bounds, granularity enums, and pagination. CLI query syntax and `--jq` are not MCP arguments. Follow response cursors where present and do not invent missing timestamps or values.
 
-In the audited core schema, best-bid/ask accepts `product_ids` as an array, while products-list accepts it as a comma-separated string. `product_type` is `SPOT`, `FUTURE`, or `EQUITY`. Candles accept RFC 3339 `start`/`end` and `granularity` tokens `1m`, `5m`, `15m`, `30m`, `1h`, `2h`, `4h`, `6h`, `1d`; default is `1h`. Inspect the returned `truncated` flag because the handler can shorten the requested window.
+In the audited core schema, best-bid/ask accepts `product_ids` as an array, while products-list accepts it as a comma-separated string. For product discovery, use `SPOT`, `FUTURE` (US CFM), `EQUITY`, or, where exposed, `GLOBAL_PERP` (international perpetuals) or `GLOBAL_FUTURE` (international dated futures). See [Futures](futures.md) for expiry filters. Candles accept RFC 3339 `start`/`end` and `granularity` tokens `1m`, `5m`, `15m`, `30m`, `1h`, `2h`, `4h`, `6h`, `1d`; default is `1h`. Inspect the returned `truncated` flag because the handler can shorten the requested window.
 
 Products-list `symbol` filtering ignores pagination and may be limited. Do not assume a provided cursor guarantees forward progress or full catalog coverage; detect repeats/non-progress and report partial data instead of looping.
 

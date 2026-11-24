@@ -2,6 +2,8 @@
 
 First follow [Coinbase MCP setup and safety](../SKILL.md). Use only Coinbase MCP for this workflow; do not switch products or credentials to retry an uncertain financial write. Follow the [Coinbase MCP trading workflow](trading.md) before planning these orders.
 
+## US dated futures (`FUTURE`)
+
 1. Verify account eligibility and discover the current CFM contract. Dated product IDs roll; do not reuse an expired example or assume a spot ticker identifies a futures contract.
 2. Futures require the eligible default portfolio. Discover its actual UUID and confirm access; never derive it from a user UUID or assume an isolated spot portfolio is eligible.
 3. Size futures market orders with `base_size` in contracts, not `quote_size`. Inspect contract increments, limits, and exposure; one contract is not necessarily one unit of the underlying asset.
@@ -10,7 +12,7 @@ First follow [Coinbase MCP setup and safety](../SKILL.md). Use only Coinbase MCP
 
 Do not substitute an IOC limit for a requested market order, change leverage/sizing/protection, or close a position without approval. Supported `reduce_only` and advanced fields depend on the current schema and venue; do not promise blanket support or silently drop unsupported protection. On ambiguous results, follow the shared trading recovery rules without switching interfaces.
 
-## MCP execution
+### MCP execution for US futures
 
 - Discover contracts with `coinbase_products_list` and its current FUTURE product-type filter; inspect the selected contract using `coinbase_products_get`.
 - Discover the eligible default portfolio with `coinbase_portfolios_list`, then inspect positions/funds with `coinbase_portfolios_get` / `coinbase_balance` as exposed.
@@ -18,3 +20,11 @@ Do not substitute an IOC limit for a requested market order, change leverage/siz
 - Inspect `coinbase_orders_get`, `coinbase_orders_list`, and `coinbase_orders_fills`; an accepted ID does not prove execution.
 
 Use discovered schemas and namespaced tools. Do not assume spot sizing, data availability, or advanced order eligibility applies to dated futures. OAuth grant access alone does not establish futures account approval.
+
+## International dated futures (`GLOBAL_FUTURE`)
+
+Use a supported Coinbase MCP connection that exposes `GLOBAL_FUTURE`. The official ChatGPT plugin does not support Global Derivatives; where supported, use the custom Coinbase MCP connection. `GLOBAL_PERP` is international perpetuals, not dated futures. Do not substitute either perpetuals or US CFM contracts.
+
+1. Discover contracts with `coinbase_products_list` and `product_type=GLOBAL_FUTURE`. Optional `expiry_start` and `expiry_end` bounds are inclusive. Pass the discovered `product_id` unchanged. Discovery is not proof of eligibility.
+2. Select an authorized Global Derivatives portfolio and check collateral and positions. Do not use the US default-portfolio rules. For `coinbase_orders_create`, pass the intended `portfolio_id` and `base_size` in contracts, not `quote_size`. Market, limit, and stop-limit orders are supported subject to eligibility; do not assume attached exits or other advanced orders are available.
+3. Order previews and confirmation-card writes are unavailable. Explain the missing preview; stop if the user requires one. Otherwise obtain explicit approval for the exact order and risk before submission. Do not pass `client_order_id` for Global Derivatives. Inspect order state and fills after submission; never automatically retry an uncertain result.
