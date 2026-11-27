@@ -2,6 +2,7 @@
 
 ## 0.0.2 — Unreleased
 
+- Add a plain-language intro to the README and list the protections Coinbase enforces on its servers (spend limits, scoped access, revocation) in its safety section.
 - Explain in the `coinbase-mcp` portfolios reference how to fund a perpetuals (`INTX`) portfolio with `coinbase_transfer`: find the `INTX` portfolio, convert USD to USDC when needed, transfer once, verify, and never split or retry a refused transfer. List `INTX` as a `portfolio_type` value.
 - Add guidance for `coinbase_agent_controls_get` in `coinbase-mcp`: read the user's spend limits and pause status before previewing an order or paying for research, treat an `unknown` pause as possibly paused, and never work around a spend-limit or paused refusal. The guidance applies only where the server exposes the tool.
 - Ship only the shared router and `coinbase-mcp` in the ChatGPT distribution. Omit `coinbase-mcp/references/x402.md`, because `/mcp/chatgpt` does not expose x402 tools, and give ChatGPT its own package README.

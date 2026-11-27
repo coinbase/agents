@@ -2,6 +2,8 @@
 
 Skills and plugins for using Coinbase products with AI agents. Start with the [`coinbase` skill](skills/coinbase/SKILL.md), which selects the right product and loads its workflows.
 
+Coinbase for Agents lets an AI agent check prices and balances, research markets, and place trades in your Coinbase account, with your approval and within limits you set. To connect, follow the [Coinbase MCP setup guide](https://docs.cdp.coinbase.com/ai-agents/coinbase-for-agents/coinbase-mcp) or see [coinbase.com/agents](https://www.coinbase.com/agents).
+
 ## Products
 
 [Agent Skills](https://agentskills.io/specification) provide reusable workflows and safety instructions. Each product has one skill for setup, authentication, safety, and capability routing, with detailed workflows in linked reference guides.
@@ -79,6 +81,12 @@ For standalone skills, build or download a generated package and install its com
 ## Safety and support
 
 Keep native approval controls enabled. Trades, transfers, conversions, paid research, and recurring activity require explicit authorization; installation and authentication do not authorize financial actions.
+
+Coinbase also enforces protections on its servers, so they hold even if an agent misreads an instruction:
+
+- **Spend limits.** You can set a per-trade limit and a 24-hour limit for your agents. Coinbase checks every order against them and refuses orders that would exceed them; agents are told not to split or reroute an order to get around a refusal.
+- **Scoped access.** An app gets only the permissions you approve when you connect it, and connecting alone does not authorize any financial action.
+- **Revocation.** Disconnect an app at [Coinbase connected apps](https://accounts.coinbase.com/security/connections) to end its access.
 
 For help, use [CDP Discord](https://discord.com/invite/cdp). Report vulnerabilities privately through [SECURITY.md](SECURITY.md). Follow the selected product's entry skill for connection and revocation instructions; uninstalling does not itself revoke access.
 
