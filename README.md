@@ -2,7 +2,7 @@
 
 Skills and plugins for using Coinbase products with AI agents. Start with the [`coinbase` skill](skills/coinbase/SKILL.md), which selects the right product and loads its workflows.
 
-Coinbase for Agents lets an AI agent check prices and balances, research markets, and place trades in your Coinbase account, with your approval and within limits you set. To connect, follow the [Coinbase MCP setup guide](https://docs.cdp.coinbase.com/ai-agents/coinbase-for-agents/coinbase-mcp) or see [coinbase.com/agents](https://www.coinbase.com/agents).
+Coinbase for Agents lets an AI agent check prices and balances, research markets, place trades, and make payments in your Coinbase account, with your approval and within limits you set. Over time, it is intended to let your agent do almost anything you can do in the Coinbase app (some capabilities are still in progress). To connect, follow the [Coinbase MCP setup guide](https://docs.cdp.coinbase.com/ai-agents/coinbase-for-agents/coinbase-mcp) or see [coinbase.com/agents](https://www.coinbase.com/agents).
 
 ## Products
 
